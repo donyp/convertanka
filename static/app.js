@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectOptions.forEach(opt => {
             opt.onclick = () => {
                 selectedBank = opt.getAttribute('data-bank');
-                currentLogo.src = opt.querySelector('img').src;
+                currentLogo.className = opt.querySelector('i').className;
                 currentText.textContent = opt.querySelector('span').textContent;
                 dropdown.classList.remove('active');
                 selectItems.classList.add('select-hide');
@@ -358,8 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let progress = 0;
         const steps = [
             { t: 30, txt: 'Menganalisa dokumen...' },
-            { t: 60, txt: 'Memproses mutasi...' },
-            { t: 90, txt: 'Menyusun Excel...' },
+            { t: 60, txt: 'Memproses data...' },
+            { t: 90, txt: 'Menyusun laporan...' },
             { t: 99, txt: 'Hampir selesai...' }
         ];
         let stepIdx = 0;
