@@ -267,6 +267,49 @@
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = '/';
 
+        /**
+         * Custom Toast Notification System
+         */
+        const Toast = {
+            init() {
+                if (!document.getElementById('toast-container')) {
+                    const container = document.createElement('div');
+                    container.id = 'toast-container';
+                    document.body.appendChild(container);
+                }
+            },
+            show(message, type = 'info', duration = 3000) {
+                this.init();
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+
+                toast.innerHTML = `
+                    <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+                    <div class="toast-content">${message}</div>
+                `;
+
+                container.appendChild(toast);
+
+                // Force reflow for animation
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, duration);
+            }
+        };
+
+        Toast.init();
+
         async function loadProfile() {
             try {
                 const res = await fetch('/api/auth/me', {
@@ -327,10 +370,14 @@
                     body: fd
                 });
                 const data = await res.json();
-                alert(data.message || data.detail);
-                loadProfile();
+                if (res.ok) {
+                    Toast.show(data.message || 'Profil berhasil diupdate', 'success');
+                    loadProfile();
+                } else {
+                    Toast.show(data.detail || 'Gagal update profil', 'error');
+                }
             } catch (err) {
-                alert("Gagal memperbarui profil.");
+                Toast.show("Gagal memperbarui profil.", 'error');
             }
         });
 
@@ -339,7 +386,7 @@
             const currentPass = document.getElementById('current_password').value;
             const newPass = document.getElementById('new_password').value;
 
-            if (!currentPass || !newPass) return alert("Harap isi semua field password.");
+            if (!currentPass || !newPass) return Toast.show("Harap isi semua field password.", 'warning');
 
             const fd = new FormData();
             fd.append('current_password', currentPass);
@@ -353,13 +400,13 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert("Password berhasil diubah!");
+                    Toast.show("Password berhasil diubah!", 'success');
                     e.target.reset();
                 } else {
-                    alert(data.detail);
+                    Toast.show(data.detail, 'error');
                 }
             } catch (err) {
-                alert("Gagal mengubah password.");
+                Toast.show("Gagal mengubah password.", 'error');
             }
         });
 
