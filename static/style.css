@@ -985,11 +985,48 @@ body {
     padding: 1.5rem;
 }
 
+.container {
+    padding: 1rem;
+}
+
+.card {
+    padding: 1.5rem;
+}
+
 .bank-options {
     gap: 0.5rem;
 }
 
 .bank-btn {
     padding: 0.75rem 0.5rem;
+}
+
+.user-profile {
+    padding: 0.3rem 0.6rem;
+    gap: 0.5rem;
+}
+
+.user-info {
+    padding-right: 0.5rem;
+}
+
+#user-email {
+    max-width: 80px;
+    font-size: 0.7rem;
+}
+
+.coin-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+}
+
+.coin-badge span {
+    display: none;
+    /* Hide 'Koin' text on very small screens */
+}
+
+.coin-badge::after {
+    content: "";
+    /* Keep it minimal */
 }
 }
