@@ -171,6 +171,49 @@
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = '/';
 
+        /**
+         * Custom Toast Notification System
+         */
+        const Toast = {
+            init() {
+                if (!document.getElementById('toast-container')) {
+                    const container = document.createElement('div');
+                    container.id = 'toast-container';
+                    document.body.appendChild(container);
+                }
+            },
+            show(message, type = 'info', duration = 3000) {
+                this.init();
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+
+                toast.innerHTML = `
+                    <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+                    <div class="toast-content">${message}</div>
+                `;
+
+                container.appendChild(toast);
+
+                // Force reflow for animation
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, duration);
+            }
+        };
+
+        Toast.init();
+
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/admin/users', {
@@ -219,14 +262,14 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message);
+                    Toast.show(data.message, 'success');
                     e.target.reset();
                     fetchUsers();
                 } else {
-                    alert(data.detail);
+                    Toast.show(data.detail, 'error');
                 }
             } catch (err) {
-                alert('Gagal menambah koin.');
+                Toast.show('Gagal menambah koin.', 'error');
             }
         });
 
@@ -247,14 +290,14 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message);
+                    Toast.show(data.message, 'success');
                     e.target.reset();
                     fetchUsers();
                 } else {
-                    alert(data.detail);
+                    Toast.show(data.detail, 'error');
                 }
             } catch (err) {
-                alert('Gagal membuat admin baru.');
+                Toast.show('Gagal membuat admin baru.', 'error');
             }
         });
 
