@@ -1,0 +1,410 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth-related Elements
+    const authModal = document.getElementById('auth-modal');
+    const authForm = document.getElementById('auth-form');
+    const openAuthBtn = document.getElementById('open-auth-btn');
+    const closeAuthBtn = document.querySelector('.close-modal');
+    const authSwitchLink = document.getElementById('auth-switch-link');
+    const authTitle = document.getElementById('auth-title');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const switchText = document.getElementById('switch-text');
+
+    // View Elements
+    const loggedOutView = document.getElementById('logged-out-view');
+    const loggedInView = document.getElementById('logged-in-view');
+    const userEmailDisplay = document.getElementById('user-email');
+    const userCodeDisplay = document.getElementById('user-code');
+    const coinBalanceDisplay = document.getElementById('coin-balance');
+    const adminLink = document.getElementById('admin-link');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Main App Elements
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const convertBtn = document.getElementById('convert-btn');
+    const fileInfo = document.getElementById('file-info');
+    const uploadText = document.querySelector('.upload-text');
+    const uploadIcon = document.querySelector('.upload-icon');
+    const filenameDisplay = document.getElementById('filename-display');
+    const removeFileBtn = document.getElementById('remove-file');
+    const errorBox = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    const warningBox = document.getElementById('warning-message');
+    const warningText = document.getElementById('warning-text');
+    const successArea = document.getElementById('success-area');
+    const downloadLink = document.getElementById('download-link');
+    const progressContainer = document.getElementById('progress-container');
+    const progressFill = document.getElementById('progress-fill');
+    const progressStatus = document.getElementById('progress-status');
+    const resetBtn = document.getElementById('reset-btn');
+
+    let selectedFile = null;
+    let selectedBank = 'bca';
+    let isRegisterMode = false;
+    let authToken = localStorage.getItem('auth_token');
+
+    // --- State Management ---
+
+    checkAuthState();
+
+    async function checkAuthState() {
+        if (!authToken) {
+            showLoggedOut();
+            return;
+        }
+
+        try {
+            const res = await fetchWithAuth('/api/auth/me');
+            if (!res.ok) throw new Error('Token expired');
+            const user = await res.json();
+            showLoggedIn(user);
+        } catch (err) {
+            console.warn('Session invalid:', err);
+            logout();
+        }
+    }
+
+    function showLoggedIn(user) {
+        loggedOutView.classList.add('hidden');
+        loggedInView.classList.remove('hidden');
+        userEmailDisplay.textContent = user.full_name || user.email;
+        userCodeDisplay.textContent = `CODE: ${user.unique_code}`;
+        coinBalanceDisplay.textContent = user.coins;
+
+        if (user.is_admin) adminLink.classList.remove('hidden');
+        else adminLink.classList.add('hidden');
+
+        // Enable upload area for users
+        if (dropZone) dropZone.classList.remove('disabled');
+
+        checkReady();
+        if (selectedFile) analyzeFile(selectedFile);
+    }
+
+    function showLoggedOut() {
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+        if (coinBalanceDisplay) coinBalanceDisplay.textContent = '...';
+        if (adminLink) adminLink.classList.add('hidden');
+
+        // Disable upload area for guests
+        if (dropZone) dropZone.classList.add('disabled');
+
+        checkReady();
+    }
+
+    function logout() {
+        localStorage.removeItem('auth_token');
+        authToken = null;
+        showLoggedOut();
+        resetApp();
+    }
+
+    // --- API Helper ---
+
+    async function fetchWithAuth(url, options = {}) {
+        const headers = options.headers || {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        return fetch(url, { ...options, headers });
+    }
+
+    // --- Auth Event Listeners ---
+
+    if (openAuthBtn) openAuthBtn.onclick = () => {
+        isRegisterMode = false;
+        updateAuthUI();
+        authModal.classList.remove('hidden');
+    };
+
+    if (closeAuthBtn) closeAuthBtn.onclick = () => authModal.classList.add('hidden');
+
+    if (authSwitchLink) authSwitchLink.onclick = (e) => {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        updateAuthUI();
+    };
+
+    function updateAuthUI() {
+        if (isRegisterMode) {
+            authTitle.textContent = "Daftar Akun Baru";
+            authSubmitBtn.textContent = "Daftar Sekarang";
+            switchText.textContent = "Sudah punya akun?";
+            authSwitchLink.textContent = "Login Sini";
+        } else {
+            authTitle.textContent = "Login Ke Akun";
+            authSubmitBtn.textContent = "Login";
+            switchText.textContent = "Belum punya akun?";
+            authSwitchLink.textContent = "Daftar Sekarang";
+        }
+    }
+
+    if (authForm) authForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = authEmail.value;
+        const password = authPassword.value;
+
+        const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+        const formData = new FormData();
+
+        if (isRegisterMode) {
+            formData.append('email', email);
+            formData.append('password', password);
+        } else {
+            formData.append('username', email);
+            formData.append('password', password);
+        }
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                if (isRegisterMode) {
+                    alert('Registrasi berhasil! Silakan login.');
+                    isRegisterMode = false;
+                    updateAuthUI();
+                } else {
+                    authToken = data.access_token;
+                    localStorage.setItem('auth_token', authToken);
+                    authModal.classList.add('hidden');
+                    checkAuthState();
+                }
+            } else {
+                alert(data.detail || 'Gagal masuk.');
+            }
+        } catch (err) {
+            alert('Terjadi kesalahan koneksi.');
+        }
+    };
+
+    if (logoutBtn) logoutBtn.onclick = logout;
+
+    // --- Bank Dropdown logic ---
+    const dropdown = document.getElementById('bank-dropdown');
+    if (dropdown) {
+        const selectSelected = dropdown.querySelector('.select-selected');
+        const selectItems = dropdown.querySelector('.select-items');
+        const selectOptions = dropdown.querySelectorAll('.select-option');
+        const currentLogo = document.getElementById('selected-bank-logo');
+        const currentText = document.getElementById('selected-bank-text');
+
+        selectSelected.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+            selectItems.classList.toggle('select-hide');
+        };
+
+        selectOptions.forEach(opt => {
+            opt.onclick = () => {
+                selectedBank = opt.getAttribute('data-bank');
+                currentLogo.src = opt.querySelector('img').src;
+                currentText.textContent = opt.querySelector('span').textContent;
+                dropdown.classList.remove('active');
+                selectItems.classList.add('select-hide');
+                resetSuccess();
+                if (selectedFile) analyzeFile(selectedFile);
+            };
+        });
+
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('active');
+            selectItems.classList.add('select-hide');
+        });
+    }
+
+    // --- File Upload Handlers ---
+    if (dropZone) dropZone.onclick = () => fileInput.click();
+    if (fileInput) fileInput.onchange = (e) => handleFiles(e.target.files);
+    if (dropZone) {
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        };
+    }
+
+    async function handleFiles(files) {
+        if (files.length > 1) { showError('Hanya 1 file diperbolehkan.'); return; }
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type !== 'application/pdf') { showError('Hanya file PDF.'); return; }
+            if (file.size > 10 * 1024 * 1024) { showError('Maksimal 10MB.'); return; }
+
+            selectedFile = file;
+            displayFile();
+            hideError();
+            hideWarning();
+            resetSuccess();
+            checkReady();
+            analyzeFile(file);
+        }
+    }
+
+    async function analyzeFile(file) {
+        if (!authToken) {
+            showWarning("Silakan login terlebih dahulu untuk menganalisa file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('bank', selectedBank);
+
+        document.getElementById('page-count').textContent = '...';
+        document.getElementById('coin-cost').textContent = '...';
+        hideWarning();
+
+        try {
+            const response = await fetchWithAuth('/api/analyze-pdf', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('page-count').textContent = data.page_count;
+                document.getElementById('coin-cost').textContent = data.coin_cost;
+                if (data.mismatch_warning) showWarning(data.mismatch_warning);
+            } else {
+                showError(data.detail || 'Gagal menganalisa file.');
+            }
+        } catch (err) {
+            showError('Error saat menganalisa file.');
+        }
+    }
+
+    function displayFile() {
+        filenameDisplay.textContent = selectedFile.name;
+        fileInfo.classList.remove('hidden');
+        uploadText.classList.add('hidden');
+        uploadIcon.classList.add('hidden');
+    }
+
+    if (removeFileBtn) removeFileBtn.onclick = (e) => { e.stopPropagation(); clearFile(); };
+
+    function clearFile() {
+        selectedFile = null;
+        fileInput.value = '';
+        fileInfo.classList.add('hidden');
+        uploadText.classList.remove('hidden');
+        uploadIcon.classList.remove('hidden');
+        checkReady();
+        resetSuccess();
+        hideWarning();
+    }
+
+    function checkReady() {
+        if (convertBtn) convertBtn.disabled = !selectedFile || !authToken;
+    }
+
+    // --- Progress Simulation ---
+    let progressInterval;
+    function startProgress() {
+        progressContainer.classList.remove('hidden');
+        convertBtn.classList.add('hidden');
+        hideWarning();
+        let progress = 0;
+        const steps = [
+            { t: 30, txt: 'Menganalisa dokumen...' },
+            { t: 60, txt: 'Memproses mutasi...' },
+            { t: 90, txt: 'Menyusun Excel...' },
+            { t: 99, txt: 'Hampir selesai...' }
+        ];
+        let stepIdx = 0;
+        progressFill.style.width = '0%';
+        progressStatus.textContent = steps[0].txt;
+
+        progressInterval = setInterval(() => {
+            if (progress < 99) {
+                progress += Math.random() * 5;
+                if (progress > 99) progress = 99;
+                progressFill.style.width = `${progress}%`;
+                if (stepIdx < steps.length - 1 && progress > steps[stepIdx].t) {
+                    stepIdx++;
+                    progressStatus.textContent = steps[stepIdx].txt;
+                }
+            }
+        }, 200);
+    }
+
+    // --- Conversion Logic ---
+    if (convertBtn) convertBtn.onclick = async () => {
+        if (!selectedFile || !authToken) return;
+
+        hideError();
+        resetSuccess();
+        startProgress();
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('bank', selectedBank);
+
+        try {
+            const response = await fetchWithAuth('/api/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Konversi gagal.');
+            }
+
+            const newBalance = response.headers.get('X-New-Balance');
+            if (newBalance) coinBalanceDisplay.textContent = newBalance;
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = `mutasi_${selectedBank}_${Date.now()}.xlsx`;
+
+            clearInterval(progressInterval);
+            progressFill.style.width = '100%';
+            progressStatus.textContent = 'Selesai!';
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+                showSuccess();
+            }, 600);
+        } catch (err) {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('hidden');
+            convertBtn.classList.remove('hidden');
+            showError(err.message);
+        }
+    };
+
+    if (resetBtn) resetBtn.onclick = resetApp;
+
+    function resetApp() {
+        clearFile();
+        resetSuccess();
+        hideError();
+        hideWarning();
+        if (convertBtn) convertBtn.classList.remove('hidden');
+        document.querySelector('.bank-selector').classList.remove('hidden');
+        document.querySelector('.upload-area').classList.remove('hidden');
+        progressFill.style.width = '0%';
+        checkReady();
+    }
+
+    function showError(msg) { errorText.textContent = msg; errorBox.classList.remove('hidden'); successArea.classList.add('hidden'); }
+    function hideError() { errorBox.classList.add('hidden'); }
+    function showWarning(msg) { warningText.textContent = msg; warningBox.classList.remove('hidden'); }
+    function hideWarning() { warningBox.classList.add('hidden'); }
+    function showSuccess() {
+        successArea.classList.remove('hidden');
+        document.querySelector('.bank-selector').classList.add('hidden');
+        document.querySelector('.upload-area').classList.add('hidden');
+        successArea.scrollIntoView({ behavior: 'smooth' });
+    }
+    function resetSuccess() { successArea.classList.add('hidden'); }
+});

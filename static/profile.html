@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan Profil - MutasiConvert</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-card {
+            padding: 2.5rem;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--white);
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.3s;
+        }
+
+        .back-btn:hover {
+            opacity: 1;
+        }
+
+        .form-section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .history-section {
+            margin-top: 3rem;
+        }
+
+        .history-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .history-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--white);
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .bank-tag {
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .empty-history {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-section h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            color: var(--white);
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="profile-container">
+        <header class="profile-header">
+            <div class="logo">
+                <i class="fas fa-user-gear"></i>
+                <h1>Pengaturan<span>Profil</span></h1>
+            </div>
+            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </header>
+
+        <main class="profile-card card glass">
+            <div class="user-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Email Anda</span>
+                    <span class="meta-value" id="disp-email">...</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Unique Code</span>
+                    <span class="meta-value" id="disp-code" style="color: var(--primary)">...</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Saldo Koin</span>
+                    <span class="meta-value" id="disp-coins">...</span>
+                </div>
+            </div>
+
+            <form id="profile-form">
+                <div class="form-section">
+                    <h3><i class="fas fa-id-card"></i> Informasi Dasar</h3>
+                    <div class="input-group">
+                        <label>Nama Lengkap / Username</label>
+                        <input type="text" id="full_name" placeholder="Masukkan nama Anda">
+                    </div>
+                    <button type="submit" class="btn btn-emerald">Simpan Perubahan</button>
+                </div>
+            </form>
+
+            <form id="password-form">
+                <div class="form-section">
+                    <h3><i class="fas fa-key"></i> Keamanan Akun</h3>
+                    <div class="input-group">
+                        <label>Password Saat Ini</label>
+                        <input type="password" id="current_password" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label>Password Baru</label>
+                        <input type="password" id="new_password" placeholder="Minimal 8 karakter">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Update Password</button>
+                </div>
+            </form>
+
+            <div class="history-section">
+                <div class="form-section">
+                    <h3><i class="fas fa-history"></i> Riwayat Konversi</h3>
+                    <div class="history-table-wrapper">
+                        <table class="history-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Bank</th>
+                                    <th>Nama File</th>
+                                    <th>Halaman</th>
+                                    <th>Biaya</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem;">Memuat riwayat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = '/';
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error();
+                const user = await res.json();
+
+                document.getElementById('disp-email').textContent = user.email;
+                document.getElementById('disp-code').textContent = user.unique_code;
+                document.getElementById('disp-coins').textContent = user.coins + " Koin";
+                document.getElementById('full_name').value = user.full_name || "";
+
+                loadHistory();
+            } catch (err) {
+                window.location.href = '/';
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/user/history', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('history-body');
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty-history">Belum ada riwayat konversi.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(item => `
+                    <tr>
+                        <td style="color: var(--text-muted)">${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td><span class="bank-tag">${item.bank}</span></td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.filename}">${item.filename}</td>
+                        <td>${item.page_count} Hal</td>
+                        <td style="color: var(--primary); font-weight: bold;">-${item.coin_cost} Koin</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-history">Gagal memuat riwayat.</td></tr>';
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('full_name').value;
+
+            const fd = new FormData();
+            fd.append('full_name', fullName);
+
+            try {
+                const res = await fetch('/api/user/update-profile', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: fd
+                });
+                const data = await res.json();
+                alert(data.message || data.detail);
+                loadProfile();
+            } catch (err) {
+                alert("Gagal memperbarui profil.");
+            }
+        });
+
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPass = document.getElementById('current_password').value;
+            const newPass = document.getElementById('new_password').value;
+
+            if (!currentPass || !newPass) return alert("Harap isi semua field password.");
+
+            const fd = new FormData();
+            fd.append('current_password', currentPass);
+            fd.append('new_password', newPass);
+
+            try {
+                const res = await fetch('/api/user/update-profile', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: fd
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert("Password berhasil diubah!");
+                    e.target.reset();
+                } else {
+                    alert(data.detail);
+                }
+            } catch (err) {
+                alert("Gagal mengubah password.");
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+
+</html>

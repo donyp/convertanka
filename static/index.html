@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konversi Mutasi Bank - PDF ke Excel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="container">
+        <header class="header">
+            <div class="user-auth-area">
+                <div id="logged-out-view">
+                    <button class="btn btn-secondary btn-sm" id="open-auth-btn">
+                        <i class="fas fa-user-circle"></i> Login / Daftar
+                    </button>
+                </div>
+                <div id="logged-in-view" class="hidden">
+                    <div class="user-profile glass">
+                        <div class="user-info">
+                            <span id="user-email">...</span>
+                            <span id="user-code" class="badge-code">CODE: ...</span>
+                        </div>
+                        <div class="coin-badge" title="1 Koin = 2 Halaman">
+                            <i class="fas fa-coins"></i>
+                            <span id="coin-balance">...</span> Koin
+                        </div>
+                        <div class="user-actions">
+                            <a href="/static/profile.html" id="profile-link" title="Pengaturan Profil"><i
+                                    class="fas fa-user-cog"></i></a>
+                            <a href="/admin" id="admin-link" class="hidden" title="Admin Panel"><i
+                                    class="fas fa-user-shield"></i></a>
+                            <button id="logout-btn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logo">
+                <i class="fas fa-file-excel"></i>
+                <h1>Mutasi<span>Convert</span></h1>
+            </div>
+            <p>Konversi Bank Statement PDF ke Excel secara akurat dan cepat.</p>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal hidden">
+            <div class="modal-content glass">
+                <div class="modal-header">
+                    <h2 id="auth-title">Login Ke Akun</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="auth-form">
+                        <div class="input-group">
+                            <label>Email</label>
+                            <input type="email" id="auth-email" placeholder="email@contoh.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="auth-password" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" id="auth-submit-btn" class="btn btn-primary w-100">
+                            Login
+                        </button>
+                    </form>
+                    <p class="auth-switch">
+                        <span id="switch-text">Belum punya akun?</span>
+                        <a href="#" id="auth-switch-link">Daftar Sekarang</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <section class="card glass">
+            <div class="bank-selector">
+                <h3>Pilih Bank</h3>
+                <div class="custom-select" id="bank-dropdown">
+                    <div class="select-selected">
+                        <div class="selected-bank-content">
+                            <img src="/static/logos/bca.png" alt="BCA" id="selected-bank-logo"
+                                onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg'; this.onerror=null;">
+                            <span id="selected-bank-text">BCA</span>
+                        </div>
+                        <i class="fas fa-chevron-down select-arrow"></i>
+                    </div>
+                    <div class="select-items select-hide">
+                        <div class="select-option" data-bank="bca">
+                            <img src="/static/logos/bca.png" alt="BCA"
+                                onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg'; this.onerror=null;">
+                            <span>BCA</span>
+                        </div>
+                        <div class="select-option" data-bank="muamalat">
+                            <img src="/static/logos/muamalat.png" alt="Muamalat"
+                                onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/d/d1/Logo_Muamalat.png'; this.onerror=null;">
+                            <span>Muamalat</span>
+                        </div>
+                        <div class="select-option" data-bank="bsi">
+                            <img src="/static/logos/bsi.png" alt="BSI"
+                                onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/a/a4/Bank_Syariah_Indonesia.svg'; this.onerror=null;">
+                            <span>BSI</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="upload-area" id="drop-zone">
+                <input type="file" id="file-input" accept=".pdf" hidden>
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">
+                    <p class="main-text">Klik atau seret file PDF di sini</p>
+                    <p class="sub-text">Maksimal 10MB</p>
+                </div>
+                <div id="file-info" class="file-info hidden">
+                    <div class="file-details">
+                        <i class="far fa-file-pdf"></i>
+                        <span id="filename-display">filename.pdf</span>
+                        <div id="cost-info" class="cost-info">
+                            <span id="page-count">0</span> Hal &bull; <span id="coin-cost">0</span> Koin
+                        </div>
+                    </div>
+                    <button type="button" id="remove-file"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="actions">
+                <div id="action-area">
+                    <button type="submit" id="convert-btn" class="btn btn-primary" disabled>
+                        <span id="btn-text"><i class="fas fa-magic"></i> Mulai Konversi</span>
+                        <div id="btn-loader" class="loader hidden"></div>
+                    </button>
+
+                    <div id="progress-container" class="progress-container hidden">
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <p id="progress-status" class="progress-status">Menyiapkan konversi...</p>
+                    </div>
+                </div>
+
+                <div id="warning-message" class="warning-box hidden">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="warning-text">Ketidaksesuaian bank terdeteksi.</span>
+                </div>
+
+                <div id="error-message" class="error-box hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="error-text">Terjadi kesalahan.</span>
+                </div>
+
+                <div id="success-area" class="success-area hidden">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4>Konversi Berhasil!</h4>
+                    <p>File Excel Anda sudah siap untuk diunduh.</p>
+                    <div class="success-actions">
+                        <a id="download-link" class="btn btn-emerald" href="#">
+                            <i class="fas fa-download"></i> Download Excel
+                        </a>
+                        <button type="button" id="reset-btn" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Convert Lagi
+                        </button>
+                    </div>
+                </div>
+        </section>
+
+        <section class="trust-section">
+            <div class="trust-badge glass">
+                <i class="fas fa-shield-halved"></i>
+                <div class="trust-text">
+                    <h4>Data Aman & Terenkripsi</h4>
+                    <p>File mutasi Anda tidak pernah disimpan di server kami. Semua pengerjaan dilakukan sepenuhnya di
+                        dalam memori (RAM) dan dihapus seketika setelah konversi selesai.</p>
+                </div>
+            </div>
+            <div class="trust-badge-group">
+                <div class="small-badge glass">
+                    <i class="fas fa-user-secret"></i>
+                    <span>Privasi Terjaga</span>
+                </div>
+                <div class="small-badge glass">
+                    <i class="fas fa-lock"></i>
+                    <span>Koneksi Aman</span>
+                </div>
+                <div class="small-badge glass">
+                    <i class="fas fa-eye-slash"></i>
+                    <span>Tanpa Log Data</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 MutasiConvert. Aman, Cepat, & Akurat.</p>
+            <p class="secondary">File Anda tidak disimpan di server kami.</p>
+        </footer>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

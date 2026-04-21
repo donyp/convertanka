@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - MutasiConvert</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .user-table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-400);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .topup-form {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .topup-form .input-group {
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-admin {
+            background: var(--primary-500);
+            color: white;
+        }
+
+        .status-user {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--white);
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.3s;
+        }
+
+        .back-btn:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="logo">
+                <i class="fas fa-user-shield"></i>
+                <h1>Admin<span>Panel</span></h1>
+            </div>
+            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali ke Home</a>
+        </header>
+
+        <section class="card glass">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3>Tambah Koin User</h3>
+                    <form id="topup-form" class="topup-form" style="flex-direction: column; align-items: stretch;">
+                        <div class="input-group">
+                            <label>Unique Code User</label>
+                            <input type="text" id="target-code" placeholder="MC-XXXXXXXX" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Jumlah Koin</label>
+                            <input type="number" id="topup-amount" value="50" min="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-emerald">
+                            <i class="fas fa-plus-circle"></i> Tambah Koin
+                        </button>
+                    </form>
+                </div>
+
+                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 2rem;">
+                    <h3>Tambah Admin Baru</h3>
+                    <form id="admin-form" class="topup-form" style="flex-direction: column; align-items: stretch;">
+                        <div class="input-group">
+                            <label>Email Admin Baru</label>
+                            <input type="email" id="admin-email" placeholder="admin@example.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="admin-password" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-user-plus"></i> Buat Akun Admin
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Daftar User</h3>
+            <div class="user-table-container">
+                <table id="user-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Kode Unik</th>
+                            <th>Saldo Koin</th>
+                            <th>Role</th>
+                            <th>Terdaftar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-body">
+                        <!-- User list populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = '/';
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Unauthorized');
+                const users = await res.json();
+                renderUsers(users);
+            } catch (err) {
+                console.error(err);
+                window.location.href = '/';
+            }
+        }
+
+        function renderUsers(users) {
+            const body = document.getElementById('user-list-body');
+            body.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.email}</td>
+                    <td><code class="badge-code">${u.unique_code}</code></td>
+                    <td><i class="fas fa-coins" style="color: #fbbf24"></i> ${u.coins}</td>
+                    <td>
+                        <span class="status-badge ${u.is_admin ? 'status-admin' : 'status-user'}">
+                            ${u.is_admin ? 'ADMIN' : 'USER'}
+                        </span>
+                    </td>
+                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('topup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('target-code').value;
+            const amount = document.getElementById('topup-amount').value;
+
+            const formData = new FormData();
+            formData.append('unique_code', code);
+            formData.append('amount', amount);
+
+            try {
+                const res = await fetch('/api/admin/add-coins', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    e.target.reset();
+                    fetchUsers();
+                } else {
+                    alert(data.detail);
+                }
+            } catch (err) {
+                alert('Gagal menambah koin.');
+            }
+        });
+
+        document.getElementById('admin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('password', password);
+
+            try {
+                const res = await fetch('/api/admin/create-admin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    e.target.reset();
+                    fetchUsers();
+                } else {
+                    alert(data.detail);
+                }
+            } catch (err) {
+                alert('Gagal membuat admin baru.');
+            }
+        });
+
+        fetchUsers();
+    </script>
+</body>
+
+</html>
