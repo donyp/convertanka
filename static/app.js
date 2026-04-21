@@ -1,4 +1,47 @@
+/**
+ * Custom Toast Notification System
+ */
+const Toast = {
+    init() {
+        if (!document.getElementById('toast-container')) {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+    },
+    show(message, type = 'info', duration = 3000) {
+        this.init();
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+            <div class="toast-content">${message}</div>
+        `;
+
+        container.appendChild(toast);
+
+        // Force reflow for animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400);
+        }, duration);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    Toast.init();
+
     // Auth-related Elements
     const authModal = document.getElementById('auth-modal');
     const authForm = document.getElementById('auth-form');
@@ -167,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.ok) {
                 if (isRegisterMode) {
-                    alert('Registrasi berhasil! Silakan login.');
+                    Toast.show('Registrasi berhasil! Silakan login.', 'success');
                     isRegisterMode = false;
                     updateAuthUI();
                 } else {
@@ -177,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkAuthState();
                 }
             } else {
-                alert(data.detail || 'Gagal masuk.');
+                Toast.show(data.detail || 'Gagal masuk.', 'error');
             }
         } catch (err) {
-            alert('Terjadi kesalahan koneksi.');
+            Toast.show('Terjadi kesalahan koneksi.', 'error');
         }
     };
 

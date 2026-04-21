@@ -903,20 +903,93 @@ body {
 }
 
 /* Responsive adjustments */
+/* --- TOAST NOTIFICATIONS --- */
+#toast-container {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    pointer-events: none;
+}
+
+.toast {
+    min-width: 300px;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transform: translateX(120%);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-success .toast-icon {
+    color: #10b981;
+}
+
+.toast-error .toast-icon {
+    color: #ef4444;
+}
+
+.toast-info .toast-icon {
+    color: #3b82f6;
+}
+
+.toast-warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast-content {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 @media (max-width: 480px) {
-    .container {
-        padding: 1rem;
+    #toast-container {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
     }
 
-    .card {
-        padding: 1.5rem;
+    .toast {
+        min-width: unset;
     }
+}
 
-    .bank-options {
-        gap: 0.5rem;
-    }
+.container {
+    padding: 1rem;
+}
 
-    .bank-btn {
-        padding: 0.75rem 0.5rem;
-    }
+.card {
+    padding: 1.5rem;
+}
+
+.bank-options {
+    gap: 0.5rem;
+}
+
+.bank-btn {
+    padding: 0.75rem 0.5rem;
+}
 }
