@@ -67,9 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetPasswordInput = document.getElementById('reset-password-input');
     const resetPasswordConfirm = document.getElementById('reset-password-confirm');
 
-    const registerOtpForm = document.getElementById('register-otp-form');
-    const registerOtpInput = document.getElementById('register-otp-input');
-    const registerSentEmailDisplay = document.getElementById('register-sent-email-display');
+    const verifyEmailForm = document.getElementById('verify-email-form');
+    const verifyEmailOtpInput = document.getElementById('verify-email-otp-input');
+    const verifyEmailBanner = document.getElementById('verify-email-banner');
+    const btnRequestVerification = document.getElementById('btn-request-verification');
+    const closeAuthBtns = document.querySelectorAll('.action-close-auth');
 
     // View Elements
     const loggedOutView = document.getElementById('logged-out-view');
@@ -144,6 +146,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 Toast.show('⚠️ Saldo koin Anda rendah! Sisa ' + user.coins + ' koin. Hubungi admin untuk top-up.', 'warning', 5000);
             }, 1000);
+        }
+
+        // Email Verification Banner
+        if (verifyEmailBanner) {
+            if (user.email_verified) {
+                verifyEmailBanner.classList.add('hidden');
+            } else {
+                verifyEmailBanner.classList.remove('hidden');
+            }
         }
 
         // Load broadcast notifications
@@ -241,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         forgotEmailForm.classList.add('hidden');
         forgotOtpForm.classList.add('hidden');
         resetPasswordForm.classList.add('hidden');
-        registerOtpForm.classList.add('hidden');
+        verifyEmailForm.classList.add('hidden');
         authSwitchContainer.classList.remove('hidden');
 
         if (isRegisterMode) {
@@ -257,12 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (closeAuthBtns) closeAuthBtns.forEach(btn => btn.onclick = () => authModal.classList.add('hidden'));
+
     if (authForm) authForm.onsubmit = async (e) => {
         e.preventDefault();
         const email = authEmail.value;
         const password = authPassword.value;
 
-        const endpoint = isRegisterMode ? '/api/auth/register-init' : '/api/auth/login';
+        const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
         const formData = new FormData();
 
         if (isRegisterMode) {
@@ -286,13 +299,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.ok) {
                 if (isRegisterMode) {
-                    // Berhasil Init -> Pindah ke Form OTP
-                    authForm.classList.add('hidden');
-                    authSwitchContainer.classList.add('hidden');
-                    registerOtpForm.classList.remove('hidden');
-                    if (registerSentEmailDisplay) registerSentEmailDisplay.textContent = email;
-                    authTitle.textContent = "Verifikasi Email Pendaftaran";
-                    Toast.show(data.message, 'success', 5000);
+                    Toast.show(data.message, 'success', 6000);
+                    // Langsung auto-login jika register sukses (backend mereturn token)
+                    if (data.access_token) {
+                        authToken = data.access_token;
+                        localStorage.setItem('auth_token', authToken);
+                        authModal.classList.add('hidden');
+                        checkAuthState();
+                        authForm.reset();
+                    }
                 } else {
                     // Login Sukses
                     authToken = data.access_token;
@@ -313,50 +328,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ----- REGISTRATION OTP SUBMIT -----
-    if (registerOtpForm) registerOtpForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-register-otp');
-        const email = authEmail.value;
-        const otpCode = registerOtpInput.value;
+    // --- In-App Verification Handlers ---
+    if (btnRequestVerification) btnRequestVerification.onclick = async () => {
+        try {
+            btnRequestVerification.disabled = true;
+            btnRequestVerification.textContent = 'Mengirim...';
 
-        if (!otpCode || otpCode.length !== 6) {
-            Toast.show('Masukkan 6 digit kode OTP yang valid.', 'error');
-            return;
+            const res = await fetchWithAuth('/api/auth/request-verification', { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                Toast.show(data.message, 'success');
+                // Buka modal verifikasi
+                authForm.classList.add('hidden');
+                authSwitchContainer.classList.add('hidden');
+                forgotEmailForm.classList.add('hidden');
+                forgotOtpForm.classList.add('hidden');
+                resetPasswordForm.classList.add('hidden');
+                verifyEmailForm.classList.remove('hidden');
+                authTitle.textContent = "Verifikasi Email Saya";
+                authModal.classList.remove('hidden');
+            } else {
+                Toast.show(data.detail, 'error');
+            }
+        } catch (err) {
+            Toast.show('Gagal mengirim verifikasi.', 'error');
+        } finally {
+            btnRequestVerification.disabled = false;
+            btnRequestVerification.textContent = 'Verifikasi & Klaim';
         }
+    };
+
+    if (verifyEmailForm) verifyEmailForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-verify-email');
+        const otpCode = verifyEmailOtpInput.value;
 
         try {
             btn.disabled = true;
             btn.innerHTML = '<div class="loader"></div>';
 
             const fd = new FormData();
-            fd.append('email', email);
             fd.append('otp', otpCode);
 
-            const res = await fetch('/api/auth/register-verify', {
+            const res = await fetchWithAuth('/api/auth/verify-email', {
                 method: 'POST',
                 body: fd
             });
             const data = await res.json();
 
             if (res.ok) {
-                Toast.show('Registrasi berhasil! 30 Koin gratis telah ditambahkan.', 'success', 5000);
-                localStorage.setItem('auth_token', data.access_token);
-                authToken = data.access_token;
+                Toast.show(data.message, 'success', 5000);
                 authModal.classList.add('hidden');
-                checkAuthState();
-                authForm.reset();
-                registerOtpForm.reset();
-                isRegisterMode = false;
-                updateAuthUI();
+                checkAuthState(); // Refresh data user (coins & verified status)
+                verifyEmailForm.reset();
             } else {
-                Toast.show(data.detail, 'error', 4000);
+                Toast.show(data.detail, 'error');
             }
         } catch (err) {
-            Toast.show('Gagal menghubungi server.', 'error');
+            Toast.show('Terjadi kesalahan server.', 'error');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Verifikasi & Selesai';
+            btn.textContent = 'Klaim 30 Koin Sekarang';
         }
     };
 

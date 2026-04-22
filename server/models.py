@@ -20,6 +20,9 @@ class User(Base):
     reset_otp_expiry = Column(DateTime, nullable=True)
     ip_address = Column(String, nullable=True)
     device_fingerprint = Column(String, index=True, nullable=True)
+    email_verified = Column(Boolean, default=False)
+    verification_otp = Column(String, nullable=True)
+    verification_otp_expiry = Column(DateTime, nullable=True)
 
     # Relationships
     records = relationship("ConversionRecord", back_populates="owner")

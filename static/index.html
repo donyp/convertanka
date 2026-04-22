@@ -83,24 +83,23 @@
                         </button>
                     </form>
 
-                    <!-- Registration OTP Form -->
-                    <form id="register-otp-form" class="hidden">
+                    <!-- Verify Email OTP Form (In-App) -->
+                    <form id="verify-email-form" class="hidden">
                         <p
                             style="margin-bottom: 1rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
-                            Kode OTP telah dikirim ke
-                            <strong id="register-sent-email-display" style="color: var(--white);"></strong>.
+                            Kode verifikasi telah dikirim ke email Anda untuk klaim 30 koin gratis.
                         </p>
                         <div class="input-group">
                             <label>Kode OTP (6 digit)</label>
-                            <input type="text" id="register-otp-input" placeholder="123456" maxlength="6" required
+                            <input type="text" id="verify-email-otp-input" placeholder="123456" maxlength="6" required
                                 style="letter-spacing: 0.5em; text-align: center; font-size: 1.2rem;">
                         </div>
                         <button type="submit" class="btn btn-primary w-100" style="margin-bottom: 0.5rem;"
-                            id="btn-register-otp">
-                            Verifikasi & Selesai
+                            id="btn-submit-verify-email">
+                            Klaim 30 Koin Sekarang
                         </button>
-                        <button type="button" class="btn btn-secondary w-100 action-back-login">
-                            Batal
+                        <button type="button" class="btn btn-secondary w-100 action-close-auth">
+                            Tutup
                         </button>
                     </form>
 
@@ -173,6 +172,20 @@
                     </p>
                 </div>
             </div>
+        </div>
+
+        <!-- Verification Banner -->
+        <div id="verify-email-banner" class="verification-banner card glass hidden">
+            <div class="banner-content">
+                <i class="fas fa-gift"></i>
+                <div class="banner-text">
+                    <h4>Verifikasi Email Untuk 30 Koin Gratis!</h4>
+                    <p>Akun Anda belum terverifikasi. Klaim hadiah pendaftaran Anda sekarang.</p>
+                </div>
+            </div>
+            <button class="btn btn-emerald btn-sm" id="btn-request-verification">
+                Verifikasi & Klaim
+            </button>
         </div>
 
         <section class="card glass">

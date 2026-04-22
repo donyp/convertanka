@@ -94,11 +94,10 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-@app.post("/api/auth/register-init")
+@app.post("/api/auth/register")
 @limiter.limit("5/minute")
-async def register_init(
+async def register(
     request: Request,
-    background_tasks: BackgroundTasks,
     email: str = Form(...),
     password: str = Form(...),
     device_fingerprint: str = Form(""),
@@ -115,58 +114,78 @@ async def register_init(
     if db_user:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
             
-    # Generate OTP
-    otp = "{:06d}".format(secrets.randbelow(1000000))
-    expiry = datetime.utcnow() + timedelta(minutes=15)
-    
-    # Remove existing pending if any
-    db.query(PendingRegistration).filter(PendingRegistration.email == email).delete()
-    
-    pending = PendingRegistration(
+    # Create user with 0 coins and unverified status
+    new_user = User(
         email=email,
         hashed_password=get_password_hash(password),
         ip_address=ip_address,
         device_fingerprint=device_fingerprint,
-        otp=otp,
-        otp_expiry=expiry
-    )
-    db.add(pending)
-    db.commit()
-    
-    background_tasks.add_task(send_otp_email, email, otp, "Verifikasi Pendaftaran DataConverter PRO", "verifikasi pendaftaran akun baru")
-    
-    return {"message": "Kode OTP telah dikirim ke email Anda. Silakan verifikasi untuk menyelesaikan pendaftaran."}
-        
-@app.post("/api/auth/register-verify")
-@limiter.limit("5/minute")
-async def register_verify(request: Request, email: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
-    pending = db.query(PendingRegistration).filter(PendingRegistration.email == email).first()
-    if not pending:
-        raise HTTPException(status_code=400, detail="Sesi pendaftaran tidak ditemukan atau Anda belum mendaftar.")
-        
-    if pending.otp != otp or pending.otp_expiry < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Kode OTP salah atau sudah kedaluwarsa.")
-        
-    # Re-check database just in case
-    if db.query(User).filter(User.email == email).first():
-        db.delete(pending)
-        db.commit()
-        raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
-        
-    new_user = User(
-        email=pending.email,
-        hashed_password=pending.hashed_password,
-        ip_address=pending.ip_address,
-        device_fingerprint=pending.device_fingerprint,
-        coins=30
+        coins=0,
+        email_verified=False
     )
     db.add(new_user)
-    db.delete(pending)
     db.commit()
     db.refresh(new_user)
     
     access_token = create_access_token(data={"sub": new_user.email})
-    return {"message": "Registrasi berhasil.", "unique_code": new_user.unique_code, "access_token": access_token, "token_type": "bearer"}
+    return {
+        "message": "Registrasi berhasil. Silakan verifikasi email Anda di panel untuk mendapatkan 30 koin gratis!",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "unique_code": new_user.unique_code
+    }
+
+@app.post("/api/auth/request-verification")
+@limiter.limit("3/minute")
+async def request_verification(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.email_verified:
+        raise HTTPException(status_code=400, detail="Email Anda sudah terverifikasi.")
+        
+    otp = "{:06d}".format(secrets.randbelow(1000000))
+    current_user.verification_otp = otp
+    current_user.verification_otp_expiry = datetime.utcnow() + timedelta(minutes=15)
+    db.commit()
+    
+    background_tasks.add_task(
+        send_otp_email, 
+        current_user.email, 
+        otp, 
+        "Verifikasi Email DataConverter PRO", 
+        "verifikasi email Anda"
+    )
+    
+    return {"message": "Kode OTP telah dikirim ke email Anda."}
+
+@app.post("/api/auth/verify-email")
+@limiter.limit("5/minute")
+async def verify_email(
+    request: Request,
+    otp: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.email_verified:
+        raise HTTPException(status_code=400, detail="Email Anda sudah terverifikasi.")
+        
+    if not current_user.verification_otp or current_user.verification_otp != otp:
+        raise HTTPException(status_code=400, detail="Kode OTP salah.")
+        
+    if current_user.verification_otp_expiry < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Kode OTP sudah kedaluwarsa.")
+        
+    # Success: Verify email and add 30 coins
+    current_user.email_verified = True
+    current_user.coins += 30
+    current_user.verification_otp = None
+    current_user.verification_otp_expiry = None
+    db.commit()
+    
+    return {"message": "Verifikasi berhasil! 30 koin gratis telah ditambahkan ke akun Anda.", "coins": current_user.coins}
 
 @app.post("/api/auth/login")
 @limiter.limit("10/minute")
@@ -244,6 +263,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "coins": current_user.coins,
         "unique_code": current_user.unique_code,
         "is_admin": current_user.is_admin,
+        "is_active": current_user.is_active,
+        "email_verified": current_user.email_verified,
         "low_balance_warning": current_user.coins < 5
     }
 
