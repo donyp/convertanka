@@ -120,7 +120,7 @@ async def register(
         hashed_password=get_password_hash(password),
         ip_address=ip_address,
         device_fingerprint=device_fingerprint,
-        coins=0,
+        coins=2,
         email_verified=False
     )
     db.add(new_user)
