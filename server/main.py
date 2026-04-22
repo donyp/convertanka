@@ -167,7 +167,7 @@ async def get_history(db: Session = Depends(get_db), current_user: User = Depend
         "filename": r.filename,
         "page_count": r.page_count,
         "coin_cost": r.coin_cost,
-        "created_at": r.created_at
+        "created_at": r.created_at.isoformat() + "Z"
     } for r in records]
 
 @app.get("/api/balance")
@@ -209,7 +209,7 @@ async def list_users(db: Session = Depends(get_db), admin: User = Depends(get_ad
         "coins": u.coins,
         "unique_code": u.unique_code,
         "is_admin": u.is_admin,
-        "created_at": u.created_at
+        "created_at": u.created_at.isoformat() + "Z"
     } for u in users]
 
 @app.post("/api/admin/add-coins")
