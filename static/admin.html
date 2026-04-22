@@ -200,17 +200,27 @@
         }
 
         .form-card .input-group input,
-        .form-card .input-group textarea {
+        .form-card .input-group textarea,
+        .form-card .input-group select {
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.7rem 1rem;
-            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
             color: var(--white);
             font-family: inherit;
             font-size: 0.9rem;
             outline: none;
             transition: all 0.3s;
+            appearance: none;
+        }
+
+        .form-card .input-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2rem;
+            padding-right: 2.5rem;
         }
 
         .form-card .input-group input::placeholder,
@@ -219,15 +229,45 @@
         }
 
         .form-card .input-group input:focus,
-        .form-card .input-group textarea:focus {
+        .form-card .input-group textarea:focus,
+        .form-card .input-group select:focus {
             border-color: var(--primary);
             background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
         }
 
         .form-card .input-group textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
+        }
+
+        /* Loading Spinner */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Tables */
@@ -498,8 +538,8 @@
                                 placeholder="MC-XXXXXXXX" required></div>
                         <div class="input-group"><label>Jumlah Koin</label><input type="number" id="topup-amount"
                                 value="50" min="1" required></div>
-                        <button type="submit" class="btn btn-emerald w-100" style="margin-top: 0.5rem;"><i
-                                class="fas fa-plus-circle"></i> Tambah Koin</button>
+                        <button type="submit" class="btn btn-emerald w-100" id="btn-topup"
+                            style="margin-top: 0.5rem;"><i class="fas fa-plus-circle"></i> Tambah Koin</button>
                     </form>
                 </div>
                 <div class="form-card">
@@ -509,7 +549,8 @@
                                 placeholder="admin@example.com" required></div>
                         <div class="input-group"><label>Password</label><input type="password" id="admin-password"
                                 placeholder="••••••••" required></div>
-                        <button type="submit" class="btn btn-secondary w-100"><i class="fas fa-user-plus"></i> Buat
+                        <button type="submit" class="btn btn-secondary w-100" id="btn-create-admin"><i
+                                class="fas fa-user-plus"></i> Buat
                             Admin</button>
                     </form>
                 </div>
@@ -595,12 +636,21 @@
             <div class="section-card">
                 <h3><i class="fas fa-bullhorn"></i> Kirim Notifikasi Broadcast</h3>
                 <form id="broadcast-form">
-                    <div class="input-group"><label>Judul</label><input type="text" id="bc-title"
-                            placeholder="Judul notifikasi" required></div>
+                    <div class="input-group">
+                        <label>Kategori Judul</label>
+                        <select id="bc-title" required>
+                            <option value="" disabled selected>Pilih kategori...</option>
+                            <option value="📢 Update Sistem">📢 Update Sistem</option>
+                            <option value="🎁 Promo Spesial">🎁 Promo Spesial</option>
+                            <option value="ℹ️ Informasi Penting">ℹ️ Informasi Penting</option>
+                            <option value="🛠️ Pemeliharaan">🛠️ Pemeliharaan</option>
+                            <option value="💎 Hadiah Koin">💎 Hadiah Koin</option>
+                        </select>
+                    </div>
                     <div class="input-group"><label>Pesan</label><textarea id="bc-message"
                             placeholder="Isi pesan broadcast..." required></textarea></div>
-                    <button type="submit" class="btn btn-emerald w-100" style="margin-top: 0.5rem;"><i
-                            class="fas fa-paper-plane"></i> Kirim Broadcast</button>
+                    <button type="submit" class="btn btn-emerald w-100" id="btn-broadcast"
+                        style="margin-top: 0.5rem;"><i class="fas fa-paper-plane"></i> Kirim Broadcast</button>
                 </form>
             </div>
             <div class="section-card">
@@ -665,6 +715,13 @@
 
         const authHeaders = { 'Authorization': `Bearer ${token}` };
 
+        function setLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (loading) btn.classList.add('btn-loading');
+            else btn.classList.remove('btn-loading');
+        }
+
         // ---- DASHBOARD ----
         async function loadStats() {
             try {
@@ -682,40 +739,42 @@
 
         // ---- USERS ----
         async function loadUsers() {
-            const res = await fetch('/api/admin/users', { headers: authHeaders });
-            const users = await res.json();
-            const admins = users.filter(u => u.is_admin);
-            const regulars = users.filter(u => !u.is_admin);
+            try {
+                const res = await fetch('/api/admin/users', { headers: authHeaders });
+                const users = await res.json();
+                const admins = users.filter(u => u.is_admin);
+                const regulars = users.filter(u => !u.is_admin);
 
-            document.getElementById('admin-count').textContent = admins.length;
-            document.getElementById('user-count').textContent = regulars.length;
+                document.getElementById('admin-count').textContent = admins.length;
+                document.getElementById('user-count').textContent = regulars.length;
 
-            document.getElementById('admin-list-body').innerHTML = admins.length === 0
-                ? '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>'
-                : admins.map(u => `<tr>
-                    <td>${u.email}</td>
-                    <td><code class="badge-code">${u.unique_code}</code></td>
-                    <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
-                    <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                </tr>`).join('');
+                document.getElementById('admin-list-body').innerHTML = admins.length === 0
+                    ? '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>'
+                    : admins.map(u => `<tr>
+                        <td>${u.email}</td>
+                        <td><code class="badge-code">${u.unique_code}</code></td>
+                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                        <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    </tr>`).join('');
 
-            document.getElementById('user-list-body').innerHTML = regulars.length === 0
-                ? '<tr><td colspan="6" class="empty-table">Belum ada user.</td></tr>'
-                : regulars.map(u => `<tr>
-                    <td>${u.email}</td>
-                    <td><code class="badge-code">${u.unique_code}</code></td>
-                    <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
-                    <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn-sm ${u.is_active ? 'btn-warn' : 'btn-success-sm'}" onclick="toggleUser(${u.id})" title="${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
-                                <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check'}"></i>
-                            </button>
-                            <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`).join('');
+                document.getElementById('user-list-body').innerHTML = regulars.length === 0
+                    ? '<tr><td colspan="6" class="empty-table">Belum ada user.</td></tr>'
+                    : regulars.map(u => `<tr>
+                        <td>${u.email}</td>
+                        <td><code class="badge-code">${u.unique_code}</code></td>
+                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                        <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+                        <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm ${u.is_active ? 'btn-warn' : 'btn-success-sm'}" onclick="toggleUser(${u.id})" title="${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                                    <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check'}"></i>
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            } catch (e) { console.error('Error loading users:', e); }
         }
 
         async function toggleUser(id) {
@@ -735,34 +794,40 @@
 
         // ---- PACKAGES ----
         async function loadPackages() {
-            const res = await fetch('/api/packages');
-            const pkgs = await res.json();
-            const el = document.getElementById('package-list');
-            if (pkgs.length === 0) { el.innerHTML = '<p class="empty-table">Belum ada paket koin.</p>'; return; }
-            el.innerHTML = pkgs.map(p => `
-                <div class="package-item">
-                    <div class="package-info">
-                        <h4>${p.name}</h4>
-                        <p><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${p.coin_amount} Koin</p>
+            try {
+                const res = await fetch('/api/packages');
+                const pkgs = await res.json();
+                const el = document.getElementById('package-list');
+                if (pkgs.length === 0) { el.innerHTML = '<p class="empty-table">Belum ada paket koin.</p>'; return; }
+                el.innerHTML = pkgs.map(p => `
+                    <div class="package-item">
+                        <div class="package-info">
+                            <h4>${p.name}</h4>
+                            <p><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${p.coin_amount} Koin</p>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:1rem;">
+                            <span class="package-price">Rp ${p.price.toLocaleString()}</span>
+                            <button class="btn-sm btn-danger" onclick="deletePackage(${p.id})"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:1rem;">
-                        <span class="package-price">Rp ${p.price.toLocaleString()}</span>
-                        <button class="btn-sm btn-danger" onclick="deletePackage(${p.id})"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (e) { console.error('Error loading packages:', e); }
         }
 
         document.getElementById('package-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            setLoading('btn-package', true);
             const fd = new FormData();
             fd.append('name', document.getElementById('pkg-name').value);
             fd.append('coin_amount', document.getElementById('pkg-coins').value);
             fd.append('price', document.getElementById('pkg-price').value);
-            const res = await fetch('/api/admin/packages', { method: 'POST', headers: authHeaders, body: fd });
-            const data = await res.json();
-            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
-            if (res.ok) { e.target.reset(); loadPackages(); }
+            try {
+                const res = await fetch('/api/admin/packages', { method: 'POST', headers: authHeaders, body: fd });
+                const data = await res.json();
+                Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) { e.target.reset(); loadPackages(); }
+            } catch (e) { Toast.show('Gagal menghubungi server', 'error'); }
+            finally { setLoading('btn-package', false); }
         });
 
         async function deletePackage(id) {
@@ -789,50 +854,76 @@
 
         document.getElementById('broadcast-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            setLoading('btn-broadcast', true);
             const fd = new FormData();
             fd.append('title', document.getElementById('bc-title').value);
             fd.append('message', document.getElementById('bc-message').value);
-            const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: authHeaders, body: fd });
-            const data = await res.json();
-            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
-            if (res.ok) { e.target.reset(); loadBroadcasts(); }
+            try {
+                const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: authHeaders, body: fd });
+                const data = await res.json();
+                Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) { e.target.reset(); loadBroadcasts(); }
+            } catch (e) { Toast.show('Gagal mengirim broadcast', 'error'); }
+            finally { setLoading('btn-broadcast', false); }
         });
 
         // ---- LOGS ----
         async function loadLogs() {
-            const res = await fetch('/api/admin/logs', { headers: authHeaders });
-            const logs = await res.json();
-            const el = document.getElementById('log-list-body');
-            if (logs.length === 0) { el.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada log.</td></tr>'; return; }
-            el.innerHTML = logs.map(l => `<tr>
-                <td style="color:var(--text-muted);white-space:nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
-                <td>${l.admin_email}</td>
-                <td><span class="badge badge-active">${l.action}</span></td>
-                <td style="color:var(--text-muted)">${l.target_info || '-'}</td>
-            </tr>`).join('');
+            try {
+                const res = await fetch('/api/admin/logs', { headers: authHeaders });
+                const logs = await res.json();
+                const el = document.getElementById('log-list-body');
+                if (logs.length === 0) { el.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada log.</td></tr>'; return; }
+                el.innerHTML = logs.map(l => `<tr>
+                    <td style="color:var(--text-muted);white-space:nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
+                    <td>${l.admin_email}</td>
+                    <td><span class="badge badge-active">${l.action}</span></td>
+                    <td style="color:var(--text-muted)">${l.target_info || '-'}</td>
+                </tr>`).join('');
+            } catch (e) { console.error('Error loading logs:', e); }
         }
 
         // ---- TOPUP & CREATE ADMIN ----
         document.getElementById('topup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            setLoading('btn-topup', true);
             const fd = new FormData(); fd.append('unique_code', document.getElementById('target-code').value); fd.append('amount', document.getElementById('topup-amount').value);
-            const res = await fetch('/api/admin/add-coins', { method: 'POST', headers: authHeaders, body: fd });
-            const data = await res.json();
-            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
-            if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
+            try {
+                const res = await fetch('/api/admin/add-coins', { method: 'POST', headers: authHeaders, body: fd });
+                const data = await res.json();
+                Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
+            } catch (e) { Toast.show('Gagal top up koin', 'error'); }
+            finally { setLoading('btn-topup', false); }
         });
 
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            setLoading('btn-create-admin', true);
             const fd = new FormData(); fd.append('email', document.getElementById('admin-email').value); fd.append('password', document.getElementById('admin-password').value);
-            const res = await fetch('/api/admin/create-admin', { method: 'POST', headers: authHeaders, body: fd });
-            const data = await res.json();
-            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
-            if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
+            try {
+                const res = await fetch('/api/admin/create-admin', { method: 'POST', headers: authHeaders, body: fd });
+                const data = await res.json();
+                Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
+            } catch (e) { Toast.show('Gagal membuat admin', 'error'); }
+            finally { setLoading('btn-create-admin', false); }
         });
 
-        // Load all data
-        loadStats(); loadUsers(); loadPackages(); loadBroadcasts(); loadLogs();
+        // Load all data in parallel
+        function initAdmin() {
+            Promise.all([
+                loadStats(),
+                loadUsers(),
+                loadPackages(),
+                loadBroadcasts(),
+                loadLogs()
+            ]).then(() => {
+                console.log('Admin data loaded in parallel');
+            });
+        }
+
+        initAdmin();
     </script>
 </body>
 
