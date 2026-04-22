@@ -104,11 +104,6 @@ async def register(request: Request, email: str = Form(...), password: str = For
     db.commit()
     db.refresh(new_user)
     
-    # Create first admin if no users exist
-    if new_user.id == 1:
-        new_user.is_admin = True
-        db.commit()
-
     return {"message": "Registrasi berhasil.", "unique_code": new_user.unique_code}
 
 @app.post("/api/auth/login")
