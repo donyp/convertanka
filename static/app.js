@@ -67,6 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetPasswordInput = document.getElementById('reset-password-input');
     const resetPasswordConfirm = document.getElementById('reset-password-confirm');
 
+    const registerOtpForm = document.getElementById('register-otp-form');
+    const registerOtpInput = document.getElementById('register-otp-input');
+    const registerSentEmailDisplay = document.getElementById('register-sent-email-display');
+
     // View Elements
     const loggedOutView = document.getElementById('logged-out-view');
     const loggedInView = document.getElementById('logged-in-view');
@@ -206,6 +210,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (closeAuthBtn) closeAuthBtn.onclick = () => authModal.classList.add('hidden');
 
+    // --- Device Fingerprinting ---
+    function getDeviceFingerprint() {
+        if (localStorage.getItem('device_fp')) {
+            return localStorage.getItem('device_fp');
+        }
+
+        let fpString = navigator.userAgent + navigator.language + screen.colorDepth + screen.width + "x" + screen.height + new Date().getTimezoneOffset();
+        let hash = 0;
+        for (let i = 0; i < fpString.length; i++) {
+            let char = fpString.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+
+        const finalFp = "fp_" + Math.abs(hash).toString(16) + "_" + Date.now().toString(16);
+        localStorage.setItem('device_fp', finalFp);
+        return finalFp;
+    }
+
     if (authSwitchLink) authSwitchLink.onclick = (e) => {
         e.preventDefault();
         isRegisterMode = !isRegisterMode;
@@ -218,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         forgotEmailForm.classList.add('hidden');
         forgotOtpForm.classList.add('hidden');
         resetPasswordForm.classList.add('hidden');
+        registerOtpForm.classList.add('hidden');
         authSwitchContainer.classList.remove('hidden');
 
         if (isRegisterMode) {
@@ -238,18 +262,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = authEmail.value;
         const password = authPassword.value;
 
-        const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+        const endpoint = isRegisterMode ? '/api/auth/register-init' : '/api/auth/login';
         const formData = new FormData();
 
         if (isRegisterMode) {
             formData.append('email', email);
             formData.append('password', password);
+            formData.append('device_fingerprint', getDeviceFingerprint());
         } else {
             formData.append('username', email);
             formData.append('password', password);
         }
 
         try {
+            authSubmitBtn.disabled = true;
+            authSubmitBtn.innerHTML = '<div class="loader"></div>';
+
             const res = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
@@ -258,20 +286,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.ok) {
                 if (isRegisterMode) {
-                    Toast.show('Registrasi berhasil! Silakan login.', 'success');
-                    isRegisterMode = false;
-                    updateAuthUI();
+                    // Berhasil Init -> Pindah ke Form OTP
+                    authForm.classList.add('hidden');
+                    authSwitchContainer.classList.add('hidden');
+                    registerOtpForm.classList.remove('hidden');
+                    if (registerSentEmailDisplay) registerSentEmailDisplay.textContent = email;
+                    authTitle.textContent = "Verifikasi Email Pendaftaran";
+                    Toast.show(data.message, 'success', 5000);
                 } else {
+                    // Login Sukses
                     authToken = data.access_token;
                     localStorage.setItem('auth_token', authToken);
                     authModal.classList.add('hidden');
                     checkAuthState();
+                    Toast.show('Login berhasil!', 'success');
+                    authForm.reset();
                 }
             } else {
-                Toast.show(data.detail || 'Gagal masuk.', 'error');
+                Toast.show(data.detail || 'Gagal', 'error', 4000);
             }
         } catch (err) {
             Toast.show('Terjadi kesalahan koneksi.', 'error');
+        } finally {
+            authSubmitBtn.disabled = false;
+            authSubmitBtn.textContent = isRegisterMode ? "Daftar Sekarang" : "Login";
+        }
+    };
+
+    // ----- REGISTRATION OTP SUBMIT -----
+    if (registerOtpForm) registerOtpForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-register-otp');
+        const email = authEmail.value;
+        const otpCode = registerOtpInput.value;
+
+        if (!otpCode || otpCode.length !== 6) {
+            Toast.show('Masukkan 6 digit kode OTP yang valid.', 'error');
+            return;
+        }
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div>';
+
+            const fd = new FormData();
+            fd.append('email', email);
+            fd.append('otp', otpCode);
+
+            const res = await fetch('/api/auth/register-verify', {
+                method: 'POST',
+                body: fd
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                Toast.show('Registrasi berhasil! 30 Koin gratis telah ditambahkan.', 'success', 5000);
+                localStorage.setItem('auth_token', data.access_token);
+                authToken = data.access_token;
+                authModal.classList.add('hidden');
+                checkAuthState();
+                authForm.reset();
+                registerOtpForm.reset();
+                isRegisterMode = false;
+                updateAuthUI();
+            } else {
+                Toast.show(data.detail, 'error', 4000);
+            }
+        } catch (err) {
+            Toast.show('Gagal menghubungi server.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Verifikasi & Selesai';
         }
     };
 

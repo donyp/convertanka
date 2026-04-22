@@ -18,6 +18,8 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_otp = Column(String, nullable=True)
     reset_otp_expiry = Column(DateTime, nullable=True)
+    ip_address = Column(String, nullable=True)
+    device_fingerprint = Column(String, index=True, nullable=True)
 
     # Relationships
     records = relationship("ConversionRecord", back_populates="owner")
@@ -72,3 +74,15 @@ class BroadcastNotification(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     admin = relationship("User")
+
+class PendingRegistration(Base):
+    __tablename__ = "pending_registrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    ip_address = Column(String, nullable=True)
+    device_fingerprint = Column(String, nullable=True)
+    otp = Column(String, nullable=False)
+    otp_expiry = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

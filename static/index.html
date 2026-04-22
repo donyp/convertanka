@@ -83,6 +83,27 @@
                         </button>
                     </form>
 
+                    <!-- Registration OTP Form -->
+                    <form id="register-otp-form" class="hidden">
+                        <p
+                            style="margin-bottom: 1rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                            Kode OTP telah dikirim ke
+                            <strong id="register-sent-email-display" style="color: var(--white);"></strong>.
+                        </p>
+                        <div class="input-group">
+                            <label>Kode OTP (6 digit)</label>
+                            <input type="text" id="register-otp-input" placeholder="123456" maxlength="6" required
+                                style="letter-spacing: 0.5em; text-align: center; font-size: 1.2rem;">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="margin-bottom: 0.5rem;"
+                            id="btn-register-otp">
+                            Verifikasi & Selesai
+                        </button>
+                        <button type="button" class="btn btn-secondary w-100 action-back-login">
+                            Batal
+                        </button>
+                    </form>
+
                     <!-- Forgot Password Email Form -->
                     <form id="forgot-email-form" class="hidden">
                         <p

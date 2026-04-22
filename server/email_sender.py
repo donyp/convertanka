@@ -8,15 +8,14 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 SMTP_FROM = os.getenv("SMTP_FROM", "noreply@dataconverter.pro")
 
-def send_otp_email(to_email: str, otp: str):
-    subject = "Reset Password DataConverter PRO"
+def send_otp_email(to_email: str, otp: str, subject: str = "Reset Password DataConverter PRO", context: str = "pengaturan ulang password"):
     body = f"""Halo,
 
-Berikut adalah kode OTP untuk pengaturan ulang password Anda:
+Berikut adalah kode OTP untuk {context} Anda:
 
 {otp}
 
-Kode ini hanya berlaku selama 15 menit. Jika Anda tidak meminta pengaturan ulang password, abaikan pesan ini.
+Kode ini hanya berlaku selama 15 menit. Jika Anda tidak merasa melakukan permintaan ini, abaikan pesan ini.
 
 Tim DataConverter PRO"""
     

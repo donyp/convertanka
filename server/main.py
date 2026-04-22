@@ -23,7 +23,7 @@ from server.excel_writer import generate_excel
 from server.coin_manager import calculate_cost # Keeping logic, but will use DB balance
 
 from server.database import engine, Base, get_db
-from server.models import User, ConversionRecord, AdminLog, CoinPackage, BroadcastNotification
+from server.models import User, ConversionRecord, AdminLog, CoinPackage, BroadcastNotification, PendingRegistration
 from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -93,24 +93,91 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-@app.post("/api/auth/register")
+@app.post("/api/auth/register-init")
 @limiter.limit("5/minute")
-async def register(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # ... existing logic ...
-    # Check if user exists
+async def register_init(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    email: str = Form(...),
+    password: str = Form(...),
+    device_fingerprint: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    ip_address = request.client.host
+    
+    # Check domain
+    if not email.endswith("@gmail.com"):
+        raise HTTPException(status_code=400, detail="Pendaftaran ditolak: Hanya email dengan domain @gmail.com yang dizinkan.")
+    
+    # Check if user already exists
     db_user = db.query(User).filter(User.email == email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
     
-    new_user = User(
+    # Check IP Limit (max 2)
+    if ip_address:
+        ip_count = db.query(User).filter(User.ip_address == ip_address).count()
+        if ip_count >= 2:
+            raise HTTPException(status_code=403, detail="Pendaftaran ditolak: Batas pendaftaran dari jaringan pendaftaran (IP) Anda telah tercapai.")
+    
+    # Check Device Fingerprint Limit (max 2)
+    if device_fingerprint:
+        device_count = db.query(User).filter(User.device_fingerprint == device_fingerprint).count()
+        if device_count >= 2:
+            raise HTTPException(status_code=403, detail="Pendaftaran ditolak: Batas pendaftaran dari perangkat (HP/Laptop) ini telah tercapai.")
+            
+    # Generate OTP
+    otp = "{:06d}".format(secrets.randbelow(1000000))
+    expiry = datetime.utcnow() + timedelta(minutes=15)
+    
+    # Remove existing pending if any
+    db.query(PendingRegistration).filter(PendingRegistration.email == email).delete()
+    
+    pending = PendingRegistration(
         email=email,
-        hashed_password=get_password_hash(password)
+        hashed_password=get_password_hash(password),
+        ip_address=ip_address,
+        device_fingerprint=device_fingerprint,
+        otp=otp,
+        otp_expiry=expiry
+    )
+    db.add(pending)
+    db.commit()
+    
+    background_tasks.add_task(send_otp_email, email, otp, "Verifikasi Pendaftaran DataConverter PRO", "verifikasi pendaftaran akun baru")
+    
+    return {"message": "Kode OTP telah dikirim ke email Anda. Silakan verifikasi untuk menyelesaikan pendaftaran."}
+
+@app.post("/api/auth/register-verify")
+@limiter.limit("5/minute")
+async def register_verify(request: Request, email: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
+    pending = db.query(PendingRegistration).filter(PendingRegistration.email == email).first()
+    if not pending:
+        raise HTTPException(status_code=400, detail="Sesi pendaftaran tidak ditemukan atau Anda belum mendaftar.")
+        
+    if pending.otp != otp or pending.otp_expiry < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Kode OTP salah atau sudah kedaluwarsa.")
+        
+    # Re-check database just in case
+    if db.query(User).filter(User.email == email).first():
+        db.delete(pending)
+        db.commit()
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
+        
+    new_user = User(
+        email=pending.email,
+        hashed_password=pending.hashed_password,
+        ip_address=pending.ip_address,
+        device_fingerprint=pending.device_fingerprint,
+        coins=30
     )
     db.add(new_user)
+    db.delete(pending)
     db.commit()
     db.refresh(new_user)
     
-    return {"message": "Registrasi berhasil.", "unique_code": new_user.unique_code}
+    access_token = create_access_token(data={"sub": new_user.email})
+    return {"message": "Registrasi berhasil.", "unique_code": new_user.unique_code, "access_token": access_token, "token_type": "bearer"}
 
 @app.post("/api/auth/login")
 @limiter.limit("10/minute")
