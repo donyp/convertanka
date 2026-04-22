@@ -63,6 +63,7 @@
                     <button class="close-modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Standard Login / Register form -->
                     <form id="auth-form">
                         <div class="input-group">
                             <label>Email</label>
@@ -72,11 +73,73 @@
                             <label>Password</label>
                             <input type="password" id="auth-password" placeholder="••••••••" required>
                         </div>
+                        <div style="text-align: right; margin-bottom: 1rem; margin-top: -0.5rem;"
+                            id="forgot-password-link-container">
+                            <a href="#" id="open-forgot-password" style="font-size: 0.9rem; color: var(--primary);">Lupa
+                                Password?</a>
+                        </div>
                         <button type="submit" id="auth-submit-btn" class="btn btn-primary w-100">
                             Login
                         </button>
                     </form>
-                    <p class="auth-switch">
+
+                    <!-- Forgot Password Email Form -->
+                    <form id="forgot-email-form" class="hidden">
+                        <p style="margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">Masukkan email yang
+                            terdaftar untuk menerima kode reset.</p>
+                        <div class="input-group">
+                            <label>Email</label>
+                            <input type="email" id="forgot-email-input" placeholder="email@contoh.com" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="margin-bottom: 0.5rem;"
+                            id="btn-forgot-email">
+                            Kirim OTP
+                        </button>
+                        <button type="button" class="btn btn-secondary w-100 action-back-login">
+                            Kembali
+                        </button>
+                    </form>
+
+                    <!-- Forgot Password OTP Form -->
+                    <form id="forgot-otp-form" class="hidden">
+                        <p style="margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">Kode OTP telah dikirim ke
+                            <strong id="sent-otp-email-display"></strong>.</p>
+                        <div class="input-group">
+                            <label>Kode OTP (6 digit)</label>
+                            <input type="text" id="forgot-otp-input" placeholder="123456" maxlength="6" required
+                                style="letter-spacing: 0.5em; text-align: center; font-size: 1.2rem;">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="margin-bottom: 0.5rem;"
+                            id="btn-forgot-otp">
+                            Verifikasi OTP
+                        </button>
+                        <button type="button" class="btn btn-secondary w-100 action-back-login">
+                            Batal
+                        </button>
+                    </form>
+
+                    <!-- Reset Password Form -->
+                    <form id="reset-password-form" class="hidden">
+                        <p style="margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">Buat password baru Anda.
+                        </p>
+                        <div class="input-group">
+                            <label>Password Baru</label>
+                            <input type="password" id="reset-password-input" placeholder="••••••••" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Konfirmasi Password Baru</label>
+                            <input type="password" id="reset-password-confirm" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="margin-bottom: 0.5rem;"
+                            id="btn-reset-password">
+                            Simpan Password Baru
+                        </button>
+                        <button type="button" class="btn btn-secondary w-100 action-back-login">
+                            Batal
+                        </button>
+                    </form>
+
+                    <p class="auth-switch" id="auth-switch-container">
                         <span id="switch-text">Belum punya akun?</span>
                         <a href="#" id="auth-switch-link">Daftar Sekarang</a>
                     </p>

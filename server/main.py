@@ -11,8 +11,10 @@ from typing import Optional, List
 import io
 import re
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 import pdfplumber
+from fastapi import BackgroundTasks
 
 from server.parsers.bca import parse_bca
 from server.parsers.muamalat import parse_muamalat
@@ -119,6 +121,53 @@ async def login(request: Request, db: Session = Depends(get_db), form_data: OAut
     
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/auth/forgot-password")
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # Prevent email enumeration by returning generic success even if not found
+        return {"message": "Jika email terdaftar, OTP telah dikirim."}
+    
+    otp = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+    user.reset_otp = otp
+    user.reset_otp_expiry = datetime.utcnow() + timedelta(minutes=15)
+    db.commit()
+    
+    from server.email_sender import send_otp_email
+    background_tasks.add_task(send_otp_email, user.email, otp)
+    
+    return {"message": "Jika email terdaftar, OTP telah dikirim."}
+
+@app.post("/api/auth/verify-otp")
+@limiter.limit("5/minute")
+async def verify_otp(request: Request, email: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user or user.reset_otp != otp:
+        raise HTTPException(status_code=400, detail="OTP salah atau tidak cocok.")
+    
+    if not user.reset_otp_expiry or datetime.utcnow() > user.reset_otp_expiry:
+        raise HTTPException(status_code=400, detail="OTP sudah kedaluwarsa.")
+        
+    return {"message": "OTP valid."}
+
+@app.post("/api/auth/reset-password")
+@limiter.limit("3/minute")
+async def reset_password(request: Request, email: str = Form(...), otp: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user or user.reset_otp != otp:
+        raise HTTPException(status_code=400, detail="OTP salah atau tidak cocok.")
+    
+    if not user.reset_otp_expiry or datetime.utcnow() > user.reset_otp_expiry:
+        raise HTTPException(status_code=400, detail="OTP sudah kedaluwarsa.")
+        
+    user.hashed_password = get_password_hash(new_password)
+    user.reset_otp = None
+    user.reset_otp_expiry = None
+    db.commit()
+    
+    return {"message": "Password berhasil diubah. Silakan login."}
 
 @app.get("/api/auth/me")
 async def get_me(current_user: User = Depends(get_current_user)):

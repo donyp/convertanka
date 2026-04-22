@@ -53,6 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const authEmail = document.getElementById('auth-email');
     const authPassword = document.getElementById('auth-password');
     const switchText = document.getElementById('switch-text');
+    const authSwitchContainer = document.getElementById('auth-switch-container');
+
+    // Forgot Password Elements
+    const forgotEmailForm = document.getElementById('forgot-email-form');
+    const forgotOtpForm = document.getElementById('forgot-otp-form');
+    const resetPasswordForm = document.getElementById('reset-password-form');
+    const openForgotPasswordBtn = document.getElementById('open-forgot-password');
+    const backToLoginBtns = document.querySelectorAll('.action-back-login');
+    const forgotEmailInput = document.getElementById('forgot-email-input');
+    const forgotOtpInput = document.getElementById('forgot-otp-input');
+    const sentOtpEmailDisplay = document.getElementById('sent-otp-email-display');
+    const resetPasswordInput = document.getElementById('reset-password-input');
+    const resetPasswordConfirm = document.getElementById('reset-password-confirm');
 
     // View Elements
     const loggedOutView = document.getElementById('logged-out-view');
@@ -172,6 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function updateAuthUI() {
+        // Reset sub-views in auth modal
+        authForm.classList.remove('hidden');
+        forgotEmailForm.classList.add('hidden');
+        forgotOtpForm.classList.add('hidden');
+        resetPasswordForm.classList.add('hidden');
+        authSwitchContainer.classList.remove('hidden');
+
         if (isRegisterMode) {
             authTitle.textContent = "Daftar Akun Baru";
             authSubmitBtn.textContent = "Daftar Sekarang";
@@ -224,6 +244,138 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             Toast.show('Terjadi kesalahan koneksi.', 'error');
+        }
+    };
+
+    // --- Forgot Password Flow ---
+    let currentResetEmail = '';
+    let currentResetOtp = '';
+
+    if (openForgotPasswordBtn) openForgotPasswordBtn.onclick = (e) => {
+        e.preventDefault();
+        authTitle.textContent = "Lupa Password";
+        authForm.classList.add('hidden');
+        authSwitchContainer.classList.add('hidden');
+        forgotEmailForm.classList.remove('hidden');
+    };
+
+    backToLoginBtns.forEach(btn => btn.onclick = () => {
+        isRegisterMode = false;
+        updateAuthUI();
+    });
+
+    if (forgotEmailForm) forgotEmailForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = forgotEmailInput.value;
+        const btn = document.getElementById('btn-forgot-email');
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+
+            const res = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                Toast.show(data.message, 'success');
+                currentResetEmail = email;
+                sentOtpEmailDisplay.textContent = email;
+                forgotEmailForm.classList.add('hidden');
+                forgotOtpForm.classList.remove('hidden');
+            } else {
+                Toast.show(data.detail || 'Gagal mengirim OTP.', 'error');
+            }
+        } catch (err) {
+            Toast.show('Terjadi kesalahan koneksi.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Kirim OTP';
+        }
+    };
+
+    if (forgotOtpForm) forgotOtpForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const otp = forgotOtpInput.value;
+        const btn = document.getElementById('btn-forgot-otp');
+        btn.disabled = true;
+        btn.textContent = 'Memverifikasi...';
+
+        try {
+            const formData = new FormData();
+            formData.append('email', currentResetEmail);
+            formData.append('otp', otp);
+
+            const res = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                Toast.show(data.message, 'success');
+                currentResetOtp = otp;
+                forgotOtpForm.classList.add('hidden');
+                resetPasswordForm.classList.remove('hidden');
+            } else {
+                Toast.show(data.detail || 'OTP salah atau kedaluwarsa.', 'error');
+            }
+        } catch (err) {
+            Toast.show('Terjadi kesalahan koneksi.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Verifikasi OTP';
+        }
+    };
+
+    if (resetPasswordForm) resetPasswordForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const newPassword = resetPasswordInput.value;
+        const confirmPassword = resetPasswordConfirm.value;
+
+        if (newPassword !== confirmPassword) {
+            Toast.show("Konfirmasi password tidak cocok.", "error");
+            return;
+        }
+
+        const btn = document.getElementById('btn-reset-password');
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
+
+        try {
+            const formData = new FormData();
+            formData.append('email', currentResetEmail);
+            formData.append('otp', currentResetOtp);
+            formData.append('new_password', newPassword);
+
+            const res = await fetch('/api/auth/reset-password', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                Toast.show(data.message, 'success');
+                isRegisterMode = false;
+                updateAuthUI();
+                // Auto fill email to login form for convenience
+                if (authEmail) authEmail.value = currentResetEmail;
+                if (authPassword) authPassword.value = '';
+            } else {
+                Toast.show(data.detail || 'Gagal mengubah password.', 'error');
+            }
+        } catch (err) {
+            Toast.show('Terjadi kesalahan koneksi.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Simpan Password Baru';
         }
     };
 

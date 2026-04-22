@@ -15,6 +15,8 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     full_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reset_otp = Column(String, nullable=True)
+    reset_otp_expiry = Column(DateTime, nullable=True)
 
     # Relationships
     records = relationship("ConversionRecord", back_populates="owner")
