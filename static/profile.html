@@ -222,20 +222,7 @@
                 </div>
             </form>
 
-            <form id="password-form">
-                <div class="form-section">
-                    <h3><i class="fas fa-key"></i> Keamanan Akun</h3>
-                    <div class="input-group">
-                        <label>Password Saat Ini</label>
-                        <input type="password" id="current_password" placeholder="••••••••">
-                    </div>
-                    <div class="input-group">
-                        <label>Password Baru</label>
-                        <input type="password" id="new_password" placeholder="Minimal 8 karakter">
-                    </div>
-                    <button type="submit" class="btn btn-secondary">Update Password</button>
-                </div>
-            </form>
+
 
             <div class="history-section">
                 <div class="form-section">
@@ -381,34 +368,7 @@
             }
         });
 
-        document.getElementById('password-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const currentPass = document.getElementById('current_password').value;
-            const newPass = document.getElementById('new_password').value;
 
-            if (!currentPass || !newPass) return Toast.show("Harap isi semua field password.", 'warning');
-
-            const fd = new FormData();
-            fd.append('current_password', currentPass);
-            fd.append('new_password', newPass);
-
-            try {
-                const res = await fetch('/api/user/update-profile', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: fd
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    Toast.show("Password berhasil diubah!", 'success');
-                    e.target.reset();
-                } else {
-                    Toast.show(data.detail, 'error');
-                }
-            } catch (err) {
-                Toast.show("Gagal mengubah password.", 'error');
-            }
-        });
 
         loadProfile();
     </script>
