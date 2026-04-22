@@ -113,18 +113,6 @@ async def register_init(
     db_user = db.query(User).filter(User.email == email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
-    
-    # Check IP Limit (max 2)
-    if ip_address:
-        ip_count = db.query(User).filter(User.ip_address == ip_address).count()
-        if ip_count >= 2:
-            raise HTTPException(status_code=403, detail="Pendaftaran ditolak: Batas pendaftaran dari jaringan pendaftaran (IP) Anda telah tercapai.")
-    
-    # Check Device Fingerprint Limit (max 2)
-    if device_fingerprint:
-        device_count = db.query(User).filter(User.device_fingerprint == device_fingerprint).count()
-        if device_count >= 2:
-            raise HTTPException(status_code=403, detail="Pendaftaran ditolak: Batas pendaftaran dari perangkat (HP/Laptop) ini telah tercapai.")
             
     # Generate OTP
     otp = "{:06d}".format(secrets.randbelow(1000000))
