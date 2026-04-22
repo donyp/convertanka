@@ -302,9 +302,25 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('file', file);
         formData.append('bank', selectedBank);
 
-        document.getElementById('page-count').textContent = '...';
-        document.getElementById('coin-cost').textContent = '...';
+        const analysisLoader = document.getElementById('analysis-loader');
+        const analysisFill = document.getElementById('analysis-fill');
+        const coinCostDisplay = document.getElementById('coin-cost');
+        const pageCountDisplay = document.getElementById('page-count');
+
+        // Show loader, hide file info temporarily
+        fileInfo.classList.add('hidden');
+        analysisLoader.classList.remove('hidden');
+        analysisFill.style.width = '0%';
         hideWarning();
+
+        // Simulation for UI snappiness
+        let progress = 0;
+        const interval = setInterval(() => {
+            if (progress < 90) {
+                progress += 5;
+                analysisFill.style.width = progress + '%';
+            }
+        }, 100);
 
         try {
             const response = await fetchWithAuth('/api/analyze-pdf', {
@@ -313,14 +329,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await response.json();
 
-            if (response.ok) {
-                document.getElementById('page-count').textContent = data.page_count;
-                document.getElementById('coin-cost').textContent = data.coin_cost;
-                if (data.mismatch_warning) showWarning(data.mismatch_warning);
-            } else {
-                showError(data.detail || 'Gagal menganalisa file.');
-            }
+            clearInterval(interval);
+            analysisFill.style.width = '100%';
+
+            setTimeout(() => {
+                analysisLoader.classList.add('hidden');
+                fileInfo.classList.remove('hidden');
+
+                if (response.ok) {
+                    pageCountDisplay.textContent = data.page_count;
+                    coinCostDisplay.textContent = data.coin_cost;
+                    if (data.mismatch_warning) showWarning(data.mismatch_warning);
+                } else {
+                    showError(data.detail || 'Gagal menganalisa file.');
+                }
+                checkReady();
+            }, 400);
         } catch (err) {
+            clearInterval(interval);
+            analysisLoader.classList.add('hidden');
             showError('Error saat menganalisa file.');
         }
     }
