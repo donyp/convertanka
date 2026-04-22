@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataConverter PRO - Konversi Mutasi Bank PDF ke Excel</title>
+    <meta name="description"
+        content="Konversi dokumen laporan keuangan PDF ke Excel secara akurat, cepat, dan aman. Mendukung BCA, Muamalat, BSI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --white: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Background */
+        .bg-blobs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(100px);
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: drift 25s infinite alternate;
+        }
+
+        .b1 {
+            width: 500px;
+            height: 500px;
+            background: #065f46;
+            top: -150px;
+            right: -100px;
+        }
+
+        .b2 {
+            width: 400px;
+            height: 400px;
+            background: #1e3a8a;
+            bottom: 10%;
+            left: -100px;
+            animation-delay: -8s;
+        }
+
+        .b3 {
+            width: 300px;
+            height: 300px;
+            background: #312e81;
+            top: 50%;
+            left: 40%;
+            animation-delay: -15s;
+        }
+
+        @keyframes drift {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(80px, 60px);
+            }
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+        }
+
+        .nav-logo i {
+            font-size: 1.6rem;
+            color: var(--primary);
+        }
+
+        .nav-logo span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .nav-logo span em {
+            font-style: normal;
+            color: var(--primary);
+        }
+
+        .nav-cta {
+            padding: 0.6rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            background: var(--primary);
+            color: var(--bg-dark);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .nav-cta:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Hero */
+        .hero {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--primary), #34d399, #6ee7b7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero-primary {
+            padding: 1rem 2.5rem;
+            border-radius: 14px;
+            border: none;
+            background: var(--primary);
+            color: var(--bg-dark);
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .btn-hero-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-hero-secondary {
+            padding: 1rem 2.5rem;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            font-weight: 600;
+            font-size: 1.05rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Bank Logos */
+        .bank-strip {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .bank-strip p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .bank-logos {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .bank-logo-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        .bank-logo-item i {
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+
+        /* Features */
+        .features {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+        }
+
+        .features .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(16, 185, 129, 0.2);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .fi-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .fi-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .fi-amber {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .fi-purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+
+        .fi-rose {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+        }
+
+        .fi-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            color: #22d3ee;
+        }
+
+        .feature-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--white);
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Pricing */
+        .pricing {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .pricing h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+        }
+
+        .pricing .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .pricing-card {
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .pricing-card.popular {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.06);
+            position: relative;
+        }
+
+        .pricing-card.popular::before {
+            content: 'POPULER';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.25rem 1rem;
+            border-radius: 50px;
+            background: var(--primary);
+            color: var(--bg-dark);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .pricing-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-coins {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+
+        .pricing-coins span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .pricing-price {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-feature {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-feature i {
+            color: var(--primary);
+            font-size: 0.75rem;
+        }
+
+        /* CTA */
+        .cta {
+            max-width: 800px;
+            margin: 4rem auto;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 24px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        .landing-footer {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .landing-footer p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .landing-footer .sec {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero,
+        .features,
+        .pricing,
+        .cta {
+            animation: fadeInUp 0.6s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="nav-logo">
+            <i class="fas fa-file-shield"></i>
+            <span>Data<em>Converter</em> PRO</span>
+        </a>
+        <a href="/app" class="nav-cta"><i class="fas fa-rocket"></i> Mulai Konversi</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge"><i class="fas fa-bolt"></i> Konversi Instan & Akurat</div>
+        <h1>Ubah Mutasi Bank<br><span class="gradient">PDF ke Excel</span><br>dalam Hitungan Detik</h1>
+        <p>Tidak perlu lagi input data manual. DataConverter PRO secara otomatis mengekstrak setiap transaksi dari
+            laporan mutasi bank Anda dengan akurasi tinggi.</p>
+        <div class="hero-actions">
+            <a href="/app" class="btn-hero-primary"><i class="fas fa-magic"></i> Mulai Konversi Gratis</a>
+            <a href="#features" class="btn-hero-secondary"><i class="fas fa-info-circle"></i> Pelajari Lebih Lanjut</a>
+        </div>
+    </section>
+
+    <!-- Bank Strip -->
+    <div class="bank-strip">
+        <p>Bank yang didukung</p>
+        <div class="bank-logos">
+            <div class="bank-logo-item"><i class="fas fa-university"></i> BCA</div>
+            <div class="bank-logo-item"><i class="fas fa-university"></i> Muamalat</div>
+            <div class="bank-logo-item"><i class="fas fa-university"></i> BSI</div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <h2>Mengapa DataConverter PRO?</h2>
+        <p class="subtitle">Dirancang untuk profesional yang membutuhkan data akurat dan cepat.</p>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon fi-green"><i class="fas fa-bullseye"></i></div>
+                <h3>Akurasi Tinggi</h3>
+                <p>Parser cerdas yang dirancang khusus per bank untuk menghasilkan data yang presisi tanpa kehilangan
+                    transaksi.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-blue"><i class="fas fa-bolt"></i></div>
+                <h3>Konversi Kilat</h3>
+                <p>Proses konversi selesai dalam hitungan detik, bahkan untuk dokumen dengan ratusan halaman.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-amber"><i class="fas fa-shield-halved"></i></div>
+                <h3>Keamanan Data</h3>
+                <p>File Anda diproses di memori server dan tidak pernah disimpan. Privasi data keuangan Anda terjamin.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-purple"><i class="fas fa-table"></i></div>
+                <h3>Format Excel Rapi</h3>
+                <p>Hasil output Excel sudah terformat dengan kolom yang terstruktur, siap untuk dianalisis atau diimpor.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-rose"><i class="fas fa-check-double"></i></div>
+                <h3>Deteksi Otomatis</h3>
+                <p>Sistem secara otomatis mendeteksi format bank dari isi PDF, memberikan peringatan jika tidak cocok.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon fi-cyan"><i class="fas fa-coins"></i></div>
+                <h3>Sistem Koin Transparan</h3>
+                <p>Bayar hanya untuk apa yang Anda gunakan. 1 koin = 2 halaman. Tanpa biaya tersembunyi.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <h2>Paket Koin</h2>
+        <p class="subtitle">Pilih paket yang sesuai kebutuhan konversi Anda.</p>
+        <div class="pricing-grid" id="pricing-cards">
+            <!-- Populated by JS -->
+            <div class="pricing-card">
+                <h3>Starter</h3>
+                <div class="pricing-coins">30 <span>Koin</span></div>
+                <div class="pricing-price">Gratis (Pendaftaran)</div>
+                <div class="pricing-feature"><i class="fas fa-check"></i> 60 Halaman konversi</div>
+                <div class="pricing-feature"><i class="fas fa-check"></i> Semua bank didukung</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>Siap Menghemat Waktu Anda?</h2>
+        <p>Daftar sekarang dan dapatkan 30 koin gratis untuk memulai konversi pertama Anda.</p>
+        <a href="/app" class="btn-hero-primary" style="display: inline-flex;"><i class="fas fa-rocket"></i> Mulai
+            Sekarang — Gratis</a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2026 DataConverter PRO. Aman, Cepat, & Akurat.</p>
+        <p class="sec">File Anda tidak disimpan di server kami. Privasi terjamin.</p>
+    </footer>
+
+    <script>
+        // Load dynamic pricing packages
+        async function loadPricing() {
+            try {
+                const res = await fetch('/api/packages');
+                const pkgs = await res.json();
+                if (pkgs.length > 0) {
+                    const grid = document.getElementById('pricing-cards');
+                    const starterCard = grid.innerHTML; // Keep the free tier card
+                    const dynamicCards = pkgs.map((p, i) => `
+                        <div class="pricing-card ${i === Math.floor(pkgs.length / 2) ? 'popular' : ''}">
+                            <h3>${p.name}</h3>
+                            <div class="pricing-coins">${p.coin_amount} <span>Koin</span></div>
+                            <div class="pricing-price">Rp ${p.price.toLocaleString('id-ID')}</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> ${p.coin_amount * 2} Halaman konversi</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Semua bank didukung</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Hubungi admin untuk top-up</div>
+                        </div>
+                    `).join('');
+                    grid.innerHTML = starterCard + dynamicCards;
+                }
+            } catch (e) { /* silent */ }
+        }
+        loadPricing();
+    </script>
+</body>
+
+</html>

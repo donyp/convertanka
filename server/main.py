@@ -23,7 +23,7 @@ from server.excel_writer import generate_excel
 from server.coin_manager import calculate_cost # Keeping logic, but will use DB balance
 
 from server.database import engine, Base, get_db
-from server.models import User, ConversionRecord
+from server.models import User, ConversionRecord, AdminLog, CoinPackage, BroadcastNotification
 from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -71,7 +71,11 @@ def sanitize_header_value(value: str) -> str:
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-async def read_index():
+async def read_landing():
+    return FileResponse("static/landing.html")
+
+@app.get("/app")
+async def read_app():
     return FileResponse("static/index.html")
 
 @app.get("/admin")
@@ -117,6 +121,12 @@ async def login(request: Request, db: Session = Depends(get_db), form_data: OAut
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email atau password salah.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akun Anda telah dinonaktifkan. Hubungi admin.",
         )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -177,7 +187,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "full_name": current_user.full_name,
         "coins": current_user.coins,
         "unique_code": current_user.unique_code,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "low_balance_warning": current_user.coins < 5
     }
 
 @app.post("/api/user/update-profile")
@@ -220,6 +231,10 @@ async def get_coin_balance(current_user: User = Depends(get_current_user)):
 
 # --- ADMIN ENDPOINTS ---
 
+def log_admin_action(db: Session, admin_id: int, action: str, target_info: str = None):
+    log = AdminLog(admin_id=admin_id, action=action, target_info=target_info)
+    db.add(log)
+
 @app.post("/api/admin/create-admin")
 async def create_admin(
     email: str = Form(...),
@@ -228,7 +243,6 @@ async def create_admin(
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user)
 ):
-    # Check if user exists
     db_user = db.query(User).filter(User.email == email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="User dengan email ini sudah terdaftar.")
@@ -238,9 +252,10 @@ async def create_admin(
         hashed_password=get_password_hash(password),
         full_name=full_name,
         is_admin=True,
-        coins=1000 # Give admins some initial koin just in case
+        coins=1000
     )
     db.add(new_admin)
+    log_admin_action(db, admin.id, "Buat Admin Baru", email)
     db.commit()
     return {"message": f"Admin {email} berhasil dibuat."}
 
@@ -253,6 +268,7 @@ async def list_users(db: Session = Depends(get_db), admin: User = Depends(get_ad
         "coins": u.coins,
         "unique_code": u.unique_code,
         "is_admin": u.is_admin,
+        "is_active": u.is_active,
         "created_at": u.created_at.isoformat() + "Z"
     } for u in users]
 
@@ -263,8 +279,168 @@ async def add_coins(unique_code: str = Form(...), amount: int = Form(...), db: S
         raise HTTPException(status_code=404, detail="User tidak ditemukan dengan kode tersebut.")
     
     user.coins += amount
+    log_admin_action(db, admin.id, f"Tambah {amount} koin", user.email)
     db.commit()
     return {"message": f"Berhasil menambahkan {amount} koin ke {user.email}.", "new_balance": user.coins}
+
+# --- DASHBOARD STATS ---
+
+from sqlalchemy import func
+
+@app.get("/api/admin/stats")
+async def get_admin_stats(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    total_users = db.query(User).filter(User.is_admin == False).count()
+    total_admins = db.query(User).filter(User.is_admin == True).count()
+    total_conversions = db.query(ConversionRecord).count()
+    
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    conversions_today = db.query(ConversionRecord).filter(ConversionRecord.created_at >= today).count()
+    
+    first_day_month = today.replace(day=1)
+    conversions_month = db.query(ConversionRecord).filter(ConversionRecord.created_at >= first_day_month).count()
+    
+    total_coins_circulating = db.query(func.sum(User.coins)).filter(User.is_admin == False).scalar() or 0
+    
+    bank_stats = db.query(ConversionRecord.bank, func.count(ConversionRecord.id)).group_by(ConversionRecord.bank).order_by(func.count(ConversionRecord.id).desc()).all()
+    popular_bank = bank_stats[0][0].upper() if bank_stats else "-"
+    
+    active_users = db.query(User).filter(User.is_admin == False, User.is_active == True).count()
+    inactive_users = db.query(User).filter(User.is_admin == False, User.is_active == False).count()
+    
+    return {
+        "total_users": total_users,
+        "total_admins": total_admins,
+        "total_conversions": total_conversions,
+        "conversions_today": conversions_today,
+        "conversions_month": conversions_month,
+        "total_coins_circulating": total_coins_circulating,
+        "popular_bank": popular_bank,
+        "active_users": active_users,
+        "inactive_users": inactive_users,
+        "bank_stats": [{"bank": b[0].upper(), "count": b[1]} for b in bank_stats]
+    }
+
+# --- ADMIN LOGS ---
+
+@app.get("/api/admin/logs")
+async def get_admin_logs(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    logs = db.query(AdminLog).order_by(AdminLog.created_at.desc()).limit(100).all()
+    result = []
+    for l in logs:
+        admin_user = db.query(User).filter(User.id == l.admin_id).first()
+        result.append({
+            "id": l.id,
+            "admin_email": admin_user.email if admin_user else "Unknown",
+            "action": l.action,
+            "target_info": l.target_info,
+            "created_at": l.created_at.isoformat() + "Z"
+        })
+    return result
+
+# --- USER MANAGEMENT ---
+
+@app.post("/api/admin/toggle-user/{user_id}")
+async def toggle_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="Tidak bisa mengubah status admin.")
+    
+    user.is_active = not user.is_active
+    status_text = "diaktifkan" if user.is_active else "dinonaktifkan"
+    log_admin_action(db, admin.id, f"User {status_text}", user.email)
+    db.commit()
+    return {"message": f"User {user.email} berhasil {status_text}.", "is_active": user.is_active}
+
+@app.delete("/api/admin/delete-user/{user_id}")
+async def delete_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="Tidak bisa menghapus admin.")
+    
+    email = user.email
+    db.query(ConversionRecord).filter(ConversionRecord.user_id == user_id).delete()
+    db.delete(user)
+    log_admin_action(db, admin.id, "Hapus User", email)
+    db.commit()
+    return {"message": f"User {email} berhasil dihapus."}
+
+# --- COIN PACKAGES ---
+
+@app.post("/api/admin/packages")
+async def create_package(
+    name: str = Form(...),
+    coin_amount: int = Form(...),
+    price: int = Form(...),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    pkg = CoinPackage(name=name, coin_amount=coin_amount, price=price)
+    db.add(pkg)
+    log_admin_action(db, admin.id, "Buat Paket Koin", f"{name} ({coin_amount} koin - Rp{price:,}")
+    db.commit()
+    return {"message": f"Paket '{name}' berhasil dibuat."}
+
+@app.get("/api/packages")
+async def list_packages(db: Session = Depends(get_db)):
+    packages = db.query(CoinPackage).filter(CoinPackage.is_active == True).order_by(CoinPackage.price.asc()).all()
+    return [{
+        "id": p.id,
+        "name": p.name,
+        "coin_amount": p.coin_amount,
+        "price": p.price
+    } for p in packages]
+
+@app.delete("/api/admin/packages/{pkg_id}")
+async def delete_package(pkg_id: int, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    pkg = db.query(CoinPackage).filter(CoinPackage.id == pkg_id).first()
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Paket tidak ditemukan.")
+    name = pkg.name
+    db.delete(pkg)
+    log_admin_action(db, admin.id, "Hapus Paket Koin", name)
+    db.commit()
+    return {"message": f"Paket '{name}' berhasil dihapus."}
+
+# --- BROADCAST NOTIFICATIONS ---
+
+@app.post("/api/admin/broadcast")
+async def create_broadcast(
+    title: str = Form(...),
+    message: str = Form(...),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    notif = BroadcastNotification(admin_id=admin.id, title=title, message=message)
+    db.add(notif)
+    log_admin_action(db, admin.id, "Kirim Broadcast", title)
+    db.commit()
+    return {"message": "Notifikasi broadcast berhasil dikirim."}
+
+@app.get("/api/admin/broadcasts")
+async def list_broadcasts(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    notifs = db.query(BroadcastNotification).order_by(BroadcastNotification.created_at.desc()).limit(50).all()
+    return [{
+        "id": n.id,
+        "title": n.title,
+        "message": n.message,
+        "created_at": n.created_at.isoformat() + "Z"
+    } for n in notifs]
+
+@app.get("/api/notifications")
+async def get_notifications(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Return latest 5 broadcast notifications from the last 7 days
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    notifs = db.query(BroadcastNotification).filter(BroadcastNotification.created_at >= week_ago).order_by(BroadcastNotification.created_at.desc()).limit(5).all()
+    return [{
+        "id": n.id,
+        "title": n.title,
+        "message": n.message,
+        "created_at": n.created_at.isoformat() + "Z"
+    } for n in notifs]
 
 # --- CONVERSION ENDPOINTS ---
 

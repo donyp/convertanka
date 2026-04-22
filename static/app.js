@@ -135,6 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enable upload area for users
         if (dropZone) dropZone.classList.remove('disabled');
 
+        // Low balance warning
+        if (user.low_balance_warning) {
+            setTimeout(() => {
+                Toast.show('⚠️ Saldo koin Anda rendah! Sisa ' + user.coins + ' koin. Hubungi admin untuk top-up.', 'warning', 5000);
+            }, 1000);
+        }
+
+        // Load broadcast notifications
+        loadBroadcastNotifications();
+
         checkReady();
         if (selectedFile) analyzeFile(selectedFile);
     }
@@ -156,6 +166,24 @@ document.addEventListener('DOMContentLoaded', () => {
         authToken = null;
         showLoggedOut();
         resetApp();
+    }
+
+    async function loadBroadcastNotifications() {
+        try {
+            const res = await fetchWithAuth('/api/notifications');
+            if (!res.ok) return;
+            const notifs = await res.json();
+            if (notifs.length > 0) {
+                const latest = notifs[0];
+                const shownKey = `notif_seen_${latest.id}`;
+                if (!localStorage.getItem(shownKey)) {
+                    setTimeout(() => {
+                        Toast.show(`📢 <strong>${latest.title}</strong>: ${latest.message}`, 'info', 6000);
+                        localStorage.setItem(shownKey, '1');
+                    }, 2000);
+                }
+            }
+        } catch (e) { /* silent */ }
     }
 
     // --- API Helper ---

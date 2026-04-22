@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - DataConverter</title>
+    <title>Admin Panel - DataConverter PRO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .admin-container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
@@ -38,24 +38,116 @@
             opacity: 1;
         }
 
-        /* --- Form Cards --- */
-        .admin-forms-grid {
+        /* Navigation Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-tab {
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-tab:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--white);
+        }
+
+        .admin-tab.active {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Stat Cards */
+        .stat-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
-        .form-card {
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.emerald .stat-icon {
+            color: var(--primary);
+        }
+
+        .stat-card.blue .stat-icon {
+            color: #60a5fa;
+        }
+
+        .stat-card.amber .stat-icon {
+            color: #fbbf24;
+        }
+
+        .stat-card.purple .stat-icon {
+            color: #a78bfa;
+        }
+
+        .stat-card.rose .stat-icon {
+            color: #fb7185;
+        }
+
+        /* Section Cards */
+        .section-card {
             padding: 2rem;
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(12px);
+            margin-bottom: 1.5rem;
         }
 
-        .form-card h3 {
-            margin-bottom: 1.5rem;
+        .section-card h3 {
+            margin-bottom: 1.25rem;
             font-size: 1.1rem;
             color: var(--primary);
             display: flex;
@@ -63,60 +155,82 @@
             gap: 0.6rem;
         }
 
-        .form-card .input-group {
+        .section-card h3 .count-badge {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-card {
+            padding: 1.75rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .form-card h4 {
             margin-bottom: 1.25rem;
+            font-size: 1rem;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-card .input-group {
+            margin-bottom: 1rem;
         }
 
         .form-card .input-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
             font-weight: 500;
         }
 
-        .form-card .input-group input {
+        .form-card .input-group input,
+        .form-card .input-group textarea {
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
             color: var(--white);
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             outline: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
-        .form-card .input-group input::placeholder {
+        .form-card .input-group input::placeholder,
+        .form-card .input-group textarea::placeholder {
             color: rgba(255, 255, 255, 0.25);
         }
 
-        .form-card .input-group input:focus {
+        .form-card .input-group input:focus,
+        .form-card .input-group textarea:focus {
             border-color: var(--primary);
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
         }
 
-        /* --- Table Sections --- */
-        .table-section {
-            margin-bottom: 2rem;
-            padding: 2rem;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
+        .form-card .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
         }
 
-        .table-section h3 {
-            margin-bottom: 1.25rem;
-            font-size: 1.1rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
+        /* Tables */
         .table-wrapper {
             overflow-x: auto;
             border-radius: 12px;
@@ -126,22 +240,22 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         th {
             text-align: left;
-            padding: 0.85rem 1rem;
+            padding: 0.75rem 1rem;
             background: rgba(255, 255, 255, 0.06);
             color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             letter-spacing: 0.5px;
         }
 
         td {
-            padding: 0.85rem 1rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: var(--white);
         }
@@ -154,57 +268,164 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
-        .status-badge {
-            padding: 0.3rem 0.7rem;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .status-admin {
-            background: linear-gradient(135deg, var(--primary-500), var(--primary-400));
-            color: var(--bg-dark);
-        }
-
-        .status-user {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-muted);
-        }
-
         .empty-table {
             text-align: center;
-            padding: 2.5rem;
+            padding: 2rem;
             color: var(--text-muted);
-            font-size: 0.9rem;
         }
 
-        .admin-stats {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .stat-chip {
-            padding: 0.4rem 0.9rem;
-            border-radius: 10px;
-            font-size: 0.8rem;
+        /* Action Buttons */
+        .btn-sm {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-muted);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-warn {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .btn-warn:hover {
+            background: rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-success-sm {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .btn-success-sm:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        .action-btns {
             display: flex;
-            align-items: center;
             gap: 0.4rem;
         }
 
-        .stat-chip .num {
-            color: var(--primary);
+        /* Status badges */
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
             font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .badge-inactive {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, var(--primary), #34d399);
+            color: var(--bg-dark);
+        }
+
+        /* Package cards */
+        .package-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.25rem;
+        }
+
+        .package-item {
+            padding: 1.25rem;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .package-info h4 {
+            color: var(--white);
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .package-info p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .package-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Broadcast items */
+        .broadcast-list {
+            margin-top: 1.25rem;
+        }
+
+        .broadcast-item {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 0.75rem;
+        }
+
+        .broadcast-item h4 {
+            color: var(--white);
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .broadcast-item p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .broadcast-item .time {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
         }
 
         @media (max-width: 768px) {
-            .admin-forms-grid {
+            .form-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
@@ -218,250 +439,399 @@
 
     <div class="admin-container">
         <header class="admin-header">
-            <div class="logo">
-                <i class="fas fa-file-shield"></i>
+            <div class="logo"><i class="fas fa-file-shield"></i>
                 <h1>Data<span>Converter</span></h1>
             </div>
-            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali ke Home</a>
+            <a href="/app" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</a>
         </header>
 
-        <!-- Admin Forms -->
-        <div class="admin-forms-grid">
-            <div class="form-card">
-                <h3><i class="fas fa-coins"></i> Tambah Koin User</h3>
-                <form id="topup-form">
-                    <div class="input-group">
-                        <label>Unique Code User</label>
-                        <input type="text" id="target-code" placeholder="MC-XXXXXXXX" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Jumlah Koin</label>
-                        <input type="number" id="topup-amount" value="50" min="1" required>
-                    </div>
-                    <button type="submit" class="btn btn-emerald w-100">
-                        <i class="fas fa-plus-circle"></i> Tambah Koin
-                    </button>
-                </form>
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
+            <button class="admin-tab" data-tab="users"><i class="fas fa-users"></i> Users</button>
+            <button class="admin-tab" data-tab="packages"><i class="fas fa-box"></i> Paket Koin</button>
+            <button class="admin-tab" data-tab="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
+            <button class="admin-tab" data-tab="logs"><i class="fas fa-clipboard-list"></i> Log Aktivitas</button>
+        </div>
+
+        <!-- TAB: Dashboard -->
+        <div class="tab-content active" id="tab-dashboard">
+            <div class="stat-grid" id="stat-cards">
+                <div class="stat-card emerald">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-value" id="s-users">-</div>
+                    <div class="stat-label">Total User</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="stat-value" id="s-today">-</div>
+                    <div class="stat-label">Konversi Hari Ini</div>
+                </div>
+                <div class="stat-card amber">
+                    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                    <div class="stat-value" id="s-coins">-</div>
+                    <div class="stat-label">Total Koin Beredar</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-icon"><i class="fas fa-file-excel"></i></div>
+                    <div class="stat-value" id="s-total">-</div>
+                    <div class="stat-label">Total Konversi</div>
+                </div>
+                <div class="stat-card rose">
+                    <div class="stat-icon"><i class="fas fa-university"></i></div>
+                    <div class="stat-value" id="s-bank">-</div>
+                    <div class="stat-label">Bank Populer</div>
+                </div>
+                <div class="stat-card emerald">
+                    <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                    <div class="stat-value" id="s-month">-</div>
+                    <div class="stat-label">Konversi Bulan Ini</div>
+                </div>
             </div>
 
-            <div class="form-card">
-                <h3><i class="fas fa-user-shield"></i> Tambah Admin Baru</h3>
-                <form id="admin-form">
-                    <div class="input-group">
-                        <label>Email Admin Baru</label>
-                        <input type="email" id="admin-email" placeholder="admin@example.com" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Password</label>
-                        <input type="password" id="admin-password" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fas fa-user-plus"></i> Buat Akun Admin
-                    </button>
-                </form>
+            <!-- Quick Actions -->
+            <div class="form-grid">
+                <div class="form-card">
+                    <h4><i class="fas fa-coins" style="color: #fbbf24;"></i> Tambah Koin</h4>
+                    <form id="topup-form">
+                        <div class="input-group"><label>Unique Code User</label><input type="text" id="target-code"
+                                placeholder="MC-XXXXXXXX" required></div>
+                        <div class="input-group"><label>Jumlah Koin</label><input type="number" id="topup-amount"
+                                value="50" min="1" required></div>
+                        <button type="submit" class="btn btn-emerald w-100" style="margin-top: 0.5rem;"><i
+                                class="fas fa-plus-circle"></i> Tambah Koin</button>
+                    </form>
+                </div>
+                <div class="form-card">
+                    <h4><i class="fas fa-user-shield" style="color: var(--primary);"></i> Buat Admin Baru</h4>
+                    <form id="admin-form">
+                        <div class="input-group"><label>Email</label><input type="email" id="admin-email"
+                                placeholder="admin@example.com" required></div>
+                        <div class="input-group"><label>Password</label><input type="password" id="admin-password"
+                                placeholder="••••••••" required></div>
+                        <button type="submit" class="btn btn-secondary w-100"><i class="fas fa-user-plus"></i> Buat
+                            Admin</button>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <!-- Daftar Admin -->
-        <div class="table-section">
-            <h3><i class="fas fa-user-shield"></i> Daftar Admin</h3>
-            <div class="admin-stats" id="admin-stats"></div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Kode Unik</th>
-                            <th>Saldo Koin</th>
-                            <th>Terdaftar</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-list-body">
-                        <tr>
-                            <td colspan="4" class="empty-table">Memuat data...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- TAB: Users -->
+        <div class="tab-content" id="tab-users">
+            <div class="section-card">
+                <h3><i class="fas fa-user-shield"></i> Daftar Admin <span class="count-badge" id="admin-count">0</span>
+                </h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Kode Unik</th>
+                                <th>Koin</th>
+                                <th>Terdaftar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-list-body">
+                            <tr>
+                                <td colspan="4" class="empty-table">Memuat...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="section-card">
+                <h3><i class="fas fa-users"></i> Daftar User <span class="count-badge" id="user-count">0</span></h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Kode Unik</th>
+                                <th>Koin</th>
+                                <th>Status</th>
+                                <th>Terdaftar</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list-body">
+                            <tr>
+                                <td colspan="6" class="empty-table">Memuat...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Daftar User -->
-        <div class="table-section">
-            <h3><i class="fas fa-users"></i> Daftar User</h3>
-            <div class="admin-stats" id="user-stats"></div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Kode Unik</th>
-                            <th>Saldo Koin</th>
-                            <th>Terdaftar</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-list-body">
-                        <tr>
-                            <td colspan="4" class="empty-table">Memuat data...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- TAB: Packages -->
+        <div class="tab-content" id="tab-packages">
+            <div class="section-card">
+                <h3><i class="fas fa-box"></i> Buat Paket Koin Baru</h3>
+                <form id="package-form" class="form-grid" style="margin-bottom: 0;">
+                    <div>
+                        <div class="input-group"><label>Nama Paket</label><input type="text" id="pkg-name"
+                                placeholder="Paket Starter" required></div>
+                        <div class="input-group"><label>Jumlah Koin</label><input type="number" id="pkg-coins"
+                                placeholder="100" min="1" required></div>
+                    </div>
+                    <div>
+                        <div class="input-group"><label>Harga (Rp)</label><input type="number" id="pkg-price"
+                                placeholder="25000" min="1000" required></div>
+                        <button type="submit" class="btn btn-emerald w-100" style="margin-top: 1.6rem;"><i
+                                class="fas fa-plus"></i> Tambah Paket</button>
+                    </div>
+                </form>
+            </div>
+            <div class="section-card">
+                <h3><i class="fas fa-list"></i> Daftar Paket Aktif</h3>
+                <div class="package-list" id="package-list">
+                    <p class="empty-table">Memuat...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Broadcast -->
+        <div class="tab-content" id="tab-broadcast">
+            <div class="section-card">
+                <h3><i class="fas fa-bullhorn"></i> Kirim Notifikasi Broadcast</h3>
+                <form id="broadcast-form">
+                    <div class="input-group"><label>Judul</label><input type="text" id="bc-title"
+                            placeholder="Judul notifikasi" required></div>
+                    <div class="input-group"><label>Pesan</label><textarea id="bc-message"
+                            placeholder="Isi pesan broadcast..." required></textarea></div>
+                    <button type="submit" class="btn btn-emerald w-100" style="margin-top: 0.5rem;"><i
+                            class="fas fa-paper-plane"></i> Kirim Broadcast</button>
+                </form>
+            </div>
+            <div class="section-card">
+                <h3><i class="fas fa-history"></i> Riwayat Broadcast</h3>
+                <div class="broadcast-list" id="broadcast-list">
+                    <p class="empty-table">Memuat...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Logs -->
+        <div class="tab-content" id="tab-logs">
+            <div class="section-card">
+                <h3><i class="fas fa-clipboard-list"></i> Log Aktivitas Admin</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Admin</th>
+                                <th>Aksi</th>
+                                <th>Target</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-list-body">
+                            <tr>
+                                <td colspan="4" class="empty-table">Memuat...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const token = localStorage.getItem('auth_token');
-        if (!token) window.location.href = '/';
+        if (!token) window.location.href = '/app';
 
+        // Toast
         const Toast = {
-            init() {
-                if (!document.getElementById('toast-container')) {
-                    const container = document.createElement('div');
-                    container.id = 'toast-container';
-                    document.body.appendChild(container);
-                }
-            },
-            show(message, type = 'info', duration = 3000) {
-                this.init();
-                const container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
-
-                const icons = {
-                    success: 'fa-check-circle',
-                    error: 'fa-exclamation-circle',
-                    warning: 'fa-exclamation-triangle',
-                    info: 'fa-info-circle'
-                };
-
-                toast.innerHTML = `
-                    <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
-                    <div class="toast-content">${message}</div>
-                `;
-
-                container.appendChild(toast);
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 400);
-                }, duration);
+            init() { if (!document.getElementById('toast-container')) { const c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); } },
+            show(msg, type = 'info', dur = 3000) {
+                this.init(); const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast toast-${type}`;
+                const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+                t.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div><div class="toast-content">${msg}</div>`;
+                c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400) }, dur);
             }
         };
-
         Toast.init();
 
-        async function fetchUsers() {
+        // Tab Navigation
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+        // ---- DASHBOARD ----
+        async function loadStats() {
             try {
-                const res = await fetch('/api/admin/users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error('Unauthorized');
-                const users = await res.json();
-                renderUsers(users);
-            } catch (err) {
-                console.error(err);
-                window.location.href = '/';
-            }
+                const res = await fetch('/api/admin/stats', { headers: authHeaders });
+                if (!res.ok) throw new Error();
+                const s = await res.json();
+                document.getElementById('s-users').textContent = s.total_users;
+                document.getElementById('s-today').textContent = s.conversions_today;
+                document.getElementById('s-coins').textContent = s.total_coins_circulating.toLocaleString();
+                document.getElementById('s-total').textContent = s.total_conversions;
+                document.getElementById('s-bank').textContent = s.popular_bank;
+                document.getElementById('s-month').textContent = s.conversions_month;
+            } catch (e) { console.error(e); window.location.href = '/app'; }
         }
 
-        function renderUsers(users) {
+        // ---- USERS ----
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users', { headers: authHeaders });
+            const users = await res.json();
             const admins = users.filter(u => u.is_admin);
-            const regularUsers = users.filter(u => !u.is_admin);
+            const regulars = users.filter(u => !u.is_admin);
 
-            // Render Admin list
-            const adminBody = document.getElementById('admin-list-body');
-            if (admins.length === 0) {
-                adminBody.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>';
-            } else {
-                adminBody.innerHTML = admins.map(u => `
-                    <tr>
-                        <td>${u.email}</td>
-                        <td><code class="badge-code">${u.unique_code}</code></td>
-                        <td><i class="fas fa-coins" style="color: #fbbf24; margin-right: 0.3rem;"></i>${u.coins}</td>
-                        <td style="color: var(--text-muted);">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    </tr>
-                `).join('');
-            }
-            document.getElementById('admin-stats').innerHTML = `
-                <div class="stat-chip"><i class="fas fa-user-shield"></i> Total: <span class="num">${admins.length}</span></div>
-            `;
+            document.getElementById('admin-count').textContent = admins.length;
+            document.getElementById('user-count').textContent = regulars.length;
 
-            // Render User list
-            const userBody = document.getElementById('user-list-body');
-            if (regularUsers.length === 0) {
-                userBody.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada user terdaftar.</td></tr>';
-            } else {
-                userBody.innerHTML = regularUsers.map(u => `
-                    <tr>
-                        <td>${u.email}</td>
-                        <td><code class="badge-code">${u.unique_code}</code></td>
-                        <td><i class="fas fa-coins" style="color: #fbbf24; margin-right: 0.3rem;"></i>${u.coins}</td>
-                        <td style="color: var(--text-muted);">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    </tr>
-                `).join('');
-            }
-            document.getElementById('user-stats').innerHTML = `
-                <div class="stat-chip"><i class="fas fa-users"></i> Total: <span class="num">${regularUsers.length}</span></div>
-            `;
+            document.getElementById('admin-list-body').innerHTML = admins.length === 0
+                ? '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>'
+                : admins.map(u => `<tr>
+                    <td>${u.email}</td>
+                    <td><code class="badge-code">${u.unique_code}</code></td>
+                    <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                    <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                </tr>`).join('');
+
+            document.getElementById('user-list-body').innerHTML = regulars.length === 0
+                ? '<tr><td colspan="6" class="empty-table">Belum ada user.</td></tr>'
+                : regulars.map(u => `<tr>
+                    <td>${u.email}</td>
+                    <td><code class="badge-code">${u.unique_code}</code></td>
+                    <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                    <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+                    <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-sm ${u.is_active ? 'btn-warn' : 'btn-success-sm'}" onclick="toggleUser(${u.id})" title="${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                                <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check'}"></i>
+                            </button>
+                            <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`).join('');
         }
 
+        async function toggleUser(id) {
+            const res = await fetch(`/api/admin/toggle-user/${id}`, { method: 'POST', headers: authHeaders });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) loadUsers();
+        }
+
+        async function deleteUser(id, email) {
+            if (!confirm(`Yakin ingin menghapus user ${email}? Data konversi juga akan dihapus.`)) return;
+            const res = await fetch(`/api/admin/delete-user/${id}`, { method: 'DELETE', headers: authHeaders });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) { loadUsers(); loadStats(); }
+        }
+
+        // ---- PACKAGES ----
+        async function loadPackages() {
+            const res = await fetch('/api/packages');
+            const pkgs = await res.json();
+            const el = document.getElementById('package-list');
+            if (pkgs.length === 0) { el.innerHTML = '<p class="empty-table">Belum ada paket koin.</p>'; return; }
+            el.innerHTML = pkgs.map(p => `
+                <div class="package-item">
+                    <div class="package-info">
+                        <h4>${p.name}</h4>
+                        <p><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${p.coin_amount} Koin</p>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <span class="package-price">Rp ${p.price.toLocaleString()}</span>
+                        <button class="btn-sm btn-danger" onclick="deletePackage(${p.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('package-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('name', document.getElementById('pkg-name').value);
+            fd.append('coin_amount', document.getElementById('pkg-coins').value);
+            fd.append('price', document.getElementById('pkg-price').value);
+            const res = await fetch('/api/admin/packages', { method: 'POST', headers: authHeaders, body: fd });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) { e.target.reset(); loadPackages(); }
+        });
+
+        async function deletePackage(id) {
+            const res = await fetch(`/api/admin/packages/${id}`, { method: 'DELETE', headers: authHeaders });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) loadPackages();
+        }
+
+        // ---- BROADCAST ----
+        async function loadBroadcasts() {
+            const res = await fetch('/api/admin/broadcasts', { headers: authHeaders });
+            const notifs = await res.json();
+            const el = document.getElementById('broadcast-list');
+            if (notifs.length === 0) { el.innerHTML = '<p class="empty-table">Belum ada broadcast.</p>'; return; }
+            el.innerHTML = notifs.map(n => `
+                <div class="broadcast-item">
+                    <h4><i class="fas fa-bell" style="color:var(--primary);margin-right:6px"></i>${n.title}</h4>
+                    <p>${n.message}</p>
+                    <span class="time">${new Date(n.created_at).toLocaleString('id-ID')}</span>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('broadcast-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('title', document.getElementById('bc-title').value);
+            fd.append('message', document.getElementById('bc-message').value);
+            const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: authHeaders, body: fd });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) { e.target.reset(); loadBroadcasts(); }
+        });
+
+        // ---- LOGS ----
+        async function loadLogs() {
+            const res = await fetch('/api/admin/logs', { headers: authHeaders });
+            const logs = await res.json();
+            const el = document.getElementById('log-list-body');
+            if (logs.length === 0) { el.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada log.</td></tr>'; return; }
+            el.innerHTML = logs.map(l => `<tr>
+                <td style="color:var(--text-muted);white-space:nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
+                <td>${l.admin_email}</td>
+                <td><span class="badge badge-active">${l.action}</span></td>
+                <td style="color:var(--text-muted)">${l.target_info || '-'}</td>
+            </tr>`).join('');
+        }
+
+        // ---- TOPUP & CREATE ADMIN ----
         document.getElementById('topup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const code = document.getElementById('target-code').value;
-            const amount = document.getElementById('topup-amount').value;
-
-            const formData = new FormData();
-            formData.append('unique_code', code);
-            formData.append('amount', amount);
-
-            try {
-                const res = await fetch('/api/admin/add-coins', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    Toast.show(data.message, 'success');
-                    e.target.reset();
-                    fetchUsers();
-                } else {
-                    Toast.show(data.detail, 'error');
-                }
-            } catch (err) {
-                Toast.show('Gagal menambah koin.', 'error');
-            }
+            const fd = new FormData(); fd.append('unique_code', document.getElementById('target-code').value); fd.append('amount', document.getElementById('topup-amount').value);
+            const res = await fetch('/api/admin/add-coins', { method: 'POST', headers: authHeaders, body: fd });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
         });
 
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
-
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('password', password);
-
-            try {
-                const res = await fetch('/api/admin/create-admin', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    Toast.show(data.message, 'success');
-                    e.target.reset();
-                    fetchUsers();
-                } else {
-                    Toast.show(data.detail, 'error');
-                }
-            } catch (err) {
-                Toast.show('Gagal membuat admin baru.', 'error');
-            }
+            const fd = new FormData(); fd.append('email', document.getElementById('admin-email').value); fd.append('password', document.getElementById('admin-password').value);
+            const res = await fetch('/api/admin/create-admin', { method: 'POST', headers: authHeaders, body: fd });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) { e.target.reset(); loadUsers(); loadStats(); loadLogs(); }
         });
 
-        fetchUsers();
+        // Load all data
+        loadStats(); loadUsers(); loadPackages(); loadBroadcasts(); loadLogs();
     </script>
 </body>
 

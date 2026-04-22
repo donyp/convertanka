@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import secrets
@@ -10,9 +10,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    coins = Column(Integer, default=30)  # Initial 30 coins as requested
+    coins = Column(Integer, default=30)
     unique_code = Column(String, unique=True, index=True)
     is_admin = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
     full_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_otp = Column(String, nullable=True)
@@ -39,3 +40,35 @@ class ConversionRecord(Base):
 
     # Relationships
     owner = relationship("User", back_populates="records")
+
+class AdminLog(Base):
+    __tablename__ = "admin_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"))
+    action = Column(String, nullable=False)
+    target_info = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    admin = relationship("User")
+
+class CoinPackage(Base):
+    __tablename__ = "coin_packages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    coin_amount = Column(Integer, nullable=False)
+    price = Column(Integer, nullable=False)  # in IDR
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class BroadcastNotification(Base):
+    __tablename__ = "broadcast_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    admin = relationship("User")
