@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .admin-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
@@ -22,61 +22,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
-        }
-
-        .user-table-container {
-            overflow-x: auto;
-            margin-top: 1.5rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th {
-            text-align: left;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--primary-400);
-            font-weight: 600;
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .topup-form {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            border-radius: 15px;
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .topup-form .input-group {
-            flex: 1;
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-admin {
-            background: var(--primary-500);
-            color: white;
-        }
-
-        .status-user {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--white);
         }
 
         .back-btn {
@@ -91,6 +36,176 @@
 
         .back-btn:hover {
             opacity: 1;
+        }
+
+        /* --- Form Cards --- */
+        .admin-forms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-card {
+            padding: 2rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        .form-card h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .form-card .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-card .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-card .input-group input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            color: var(--white);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-card .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .form-card .input-group input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+        }
+
+        /* --- Table Sections --- */
+        .table-section {
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        .table-section h3 {
+            margin-bottom: 1.25rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--white);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .status-admin {
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-400));
+            color: var(--bg-dark);
+        }
+
+        .status-user {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+        }
+
+        .empty-table {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .admin-stats {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-chip {
+            padding: 0.4rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stat-chip .num {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .admin-forms-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -110,70 +225,94 @@
             <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali ke Home</a>
         </header>
 
-        <section class="card glass">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <div>
-                    <h3>Tambah Koin User</h3>
-                    <form id="topup-form" class="topup-form" style="flex-direction: column; align-items: stretch;">
-                        <div class="input-group">
-                            <label>Unique Code User</label>
-                            <input type="text" id="target-code" placeholder="MC-XXXXXXXX" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Jumlah Koin</label>
-                            <input type="number" id="topup-amount" value="50" min="1" required>
-                        </div>
-                        <button type="submit" class="btn btn-emerald">
-                            <i class="fas fa-plus-circle"></i> Tambah Koin
-                        </button>
-                    </form>
-                </div>
-
-                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 2rem;">
-                    <h3>Tambah Admin Baru</h3>
-                    <form id="admin-form" class="topup-form" style="flex-direction: column; align-items: stretch;">
-                        <div class="input-group">
-                            <label>Email Admin Baru</label>
-                            <input type="email" id="admin-email" placeholder="admin@example.com" required>
-                        </div>
-                        <div class="input-group">
-                            <label>Password</label>
-                            <input type="password" id="admin-password" placeholder="••••••••" required>
-                        </div>
-                        <button type="submit" class="btn btn-secondary">
-                            <i class="fas fa-user-plus"></i> Buat Akun Admin
-                        </button>
-                    </form>
-                </div>
+        <!-- Admin Forms -->
+        <div class="admin-forms-grid">
+            <div class="form-card">
+                <h3><i class="fas fa-coins"></i> Tambah Koin User</h3>
+                <form id="topup-form">
+                    <div class="input-group">
+                        <label>Unique Code User</label>
+                        <input type="text" id="target-code" placeholder="MC-XXXXXXXX" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Jumlah Koin</label>
+                        <input type="number" id="topup-amount" value="50" min="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-emerald w-100">
+                        <i class="fas fa-plus-circle"></i> Tambah Koin
+                    </button>
+                </form>
             </div>
 
-            <h3 style="margin-top: 2rem;">Daftar User</h3>
-            <div class="user-table-container">
-                <table id="user-table">
+            <div class="form-card">
+                <h3><i class="fas fa-user-shield"></i> Tambah Admin Baru</h3>
+                <form id="admin-form">
+                    <div class="input-group">
+                        <label>Email Admin Baru</label>
+                        <input type="email" id="admin-email" placeholder="admin@example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="admin-password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fas fa-user-plus"></i> Buat Akun Admin
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Daftar Admin -->
+        <div class="table-section">
+            <h3><i class="fas fa-user-shield"></i> Daftar Admin</h3>
+            <div class="admin-stats" id="admin-stats"></div>
+            <div class="table-wrapper">
+                <table>
                     <thead>
                         <tr>
                             <th>Email</th>
                             <th>Kode Unik</th>
                             <th>Saldo Koin</th>
-                            <th>Role</th>
+                            <th>Terdaftar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-list-body">
+                        <tr>
+                            <td colspan="4" class="empty-table">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Daftar User -->
+        <div class="table-section">
+            <h3><i class="fas fa-users"></i> Daftar User</h3>
+            <div class="admin-stats" id="user-stats"></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Kode Unik</th>
+                            <th>Saldo Koin</th>
                             <th>Terdaftar</th>
                         </tr>
                     </thead>
                     <tbody id="user-list-body">
-                        <!-- User list populated via JS -->
+                        <tr>
+                            <td colspan="4" class="empty-table">Memuat data...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </div>
 
     <script>
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = '/';
 
-        /**
-         * Custom Toast Notification System
-         */
         const Toast = {
             init() {
                 if (!document.getElementById('toast-container')) {
@@ -201,10 +340,7 @@
                 `;
 
                 container.appendChild(toast);
-
-                // Force reflow for animation
                 setTimeout(() => toast.classList.add('show'), 10);
-
                 setTimeout(() => {
                     toast.classList.remove('show');
                     setTimeout(() => toast.remove(), 400);
@@ -229,20 +365,44 @@
         }
 
         function renderUsers(users) {
-            const body = document.getElementById('user-list-body');
-            body.innerHTML = users.map(u => `
-                <tr>
-                    <td>${u.email}</td>
-                    <td><code class="badge-code">${u.unique_code}</code></td>
-                    <td><i class="fas fa-coins" style="color: #fbbf24"></i> ${u.coins}</td>
-                    <td>
-                        <span class="status-badge ${u.is_admin ? 'status-admin' : 'status-user'}">
-                            ${u.is_admin ? 'ADMIN' : 'USER'}
-                        </span>
-                    </td>
-                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
+            const admins = users.filter(u => u.is_admin);
+            const regularUsers = users.filter(u => !u.is_admin);
+
+            // Render Admin list
+            const adminBody = document.getElementById('admin-list-body');
+            if (admins.length === 0) {
+                adminBody.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>';
+            } else {
+                adminBody.innerHTML = admins.map(u => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td><code class="badge-code">${u.unique_code}</code></td>
+                        <td><i class="fas fa-coins" style="color: #fbbf24; margin-right: 0.3rem;"></i>${u.coins}</td>
+                        <td style="color: var(--text-muted);">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('admin-stats').innerHTML = `
+                <div class="stat-chip"><i class="fas fa-user-shield"></i> Total: <span class="num">${admins.length}</span></div>
+            `;
+
+            // Render User list
+            const userBody = document.getElementById('user-list-body');
+            if (regularUsers.length === 0) {
+                userBody.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada user terdaftar.</td></tr>';
+            } else {
+                userBody.innerHTML = regularUsers.map(u => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td><code class="badge-code">${u.unique_code}</code></td>
+                        <td><i class="fas fa-coins" style="color: #fbbf24; margin-right: 0.3rem;"></i>${u.coins}</td>
+                        <td style="color: var(--text-muted);">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('user-stats').innerHTML = `
+                <div class="stat-chip"><i class="fas fa-users"></i> Total: <span class="num">${regularUsers.length}</span></div>
+            `;
         }
 
         document.getElementById('topup-form').addEventListener('submit', async (e) => {
