@@ -252,7 +252,7 @@
 
     <script>
         const token = localStorage.getItem('auth_token');
-        if (!token) window.location.href = '/';
+        if (!token) window.location.href = '/app';
 
         /**
          * Custom Toast Notification System
@@ -312,7 +312,7 @@
 
                 loadHistory();
             } catch (err) {
-                window.location.href = '/';
+                window.location.href = '/app';
             }
         }
 
