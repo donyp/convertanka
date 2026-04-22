@@ -201,7 +201,10 @@
 
         .form-card .input-group input,
         .form-card .input-group textarea,
-        .form-card .input-group select {
+        .form-card .input-group select,
+        .section-card .input-group input,
+        .section-card .input-group textarea,
+        .section-card .input-group select {
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -213,9 +216,19 @@
             outline: none;
             transition: all 0.3s;
             appearance: none;
+            -webkit-appearance: none;
         }
 
-        .form-card .input-group select {
+        /* Fix for potential white background from global styles or browsers */
+        .admin-container input,
+        .admin-container textarea,
+        .admin-container select {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: var(--white) !important;
+        }
+
+        .form-card .input-group select,
+        .section-card .input-group select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 1rem center;
@@ -230,13 +243,17 @@
 
         .form-card .input-group input:focus,
         .form-card .input-group textarea:focus,
-        .form-card .input-group select:focus {
+        .form-card .input-group select:focus,
+        .section-card .input-group input:focus,
+        .section-card .input-group textarea:focus,
+        .section-card .input-group select:focus {
             border-color: var(--primary);
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
         }
 
-        .form-card .input-group textarea {
+        .form-card .input-group textarea,
+        .section-card .input-group textarea {
             resize: vertical;
             min-height: 100px;
         }
