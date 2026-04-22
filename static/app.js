@@ -33,8 +33,8 @@ const Toast = {
         setTimeout(() => toast.classList.add('show'), 10);
 
         setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 400);
+            toast.classList.add('exit');
+            setTimeout(() => toast.remove(), 600);
         }, duration);
     }
 };
@@ -140,13 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Enable upload area for users
         if (dropZone) dropZone.classList.remove('disabled');
-
-        // Low balance warning
-        if (user.low_balance_warning) {
-            setTimeout(() => {
-                Toast.show('⚠️ Saldo koin Anda rendah! Sisa ' + user.coins + ' koin. Hubungi admin untuk top-up.', 'warning', 5000);
-            }, 1000);
-        }
 
         // Email Verification Banner
         if (verifyEmailBanner) {

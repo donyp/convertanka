@@ -647,7 +647,8 @@
                 this.init(); const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast toast-${type}`;
                 const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
                 t.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div><div class="toast-content">${msg}</div>`;
-                c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400) }, dur);
+                c.appendChild(t); setTimeout(() => t.classList.add('show'), 10);
+                setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 600) }, dur);
             }
         };
         Toast.init();

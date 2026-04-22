@@ -192,7 +192,7 @@
                 <i class="fas fa-file-shield"></i>
                 <h1>Data<span>Converter</span></h1>
             </div>
-            <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</a>
+            <a href="/app" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</a>
         </header>
 
         <main class="profile-card card glass">
@@ -289,8 +289,8 @@
                 setTimeout(() => toast.classList.add('show'), 10);
 
                 setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 400);
+                    toast.classList.add('exit');
+                    setTimeout(() => toast.remove(), 600);
                 }, duration);
             }
         };
