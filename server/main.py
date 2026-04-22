@@ -136,7 +136,7 @@ async def register_init(
     background_tasks.add_task(send_otp_email, email, otp, "Verifikasi Pendaftaran DataConverter PRO", "verifikasi pendaftaran akun baru")
     
     return {"message": "Kode OTP telah dikirim ke email Anda. Silakan verifikasi untuk menyelesaikan pendaftaran."}
-
+        
 @app.post("/api/auth/register-verify")
 @limiter.limit("5/minute")
 async def register_verify(request: Request, email: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
