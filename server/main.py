@@ -25,6 +25,7 @@ from server.coin_manager import calculate_cost # Keeping logic, but will use DB 
 from server.database import engine, Base, get_db
 from server.models import User, ConversionRecord, AdminLog, CoinPackage, BroadcastNotification, PendingRegistration
 from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
+from server.email_sender import send_otp_email
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
