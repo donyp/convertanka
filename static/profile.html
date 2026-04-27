@@ -247,6 +247,34 @@
                     </div>
                 </div>
             </div>
+
+            <div class="history-section">
+                <div class="form-section">
+                    <h3><i class="fas fa-shopping-cart"></i> Riwayat Pembelian Koin</h3>
+                    <div class="history-table-wrapper">
+                        <table class="history-table" id="purchase-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Paket</th>
+                                    <th>Harga</th>
+                                    <th>Metode</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchase-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem;">Memuat riwayat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <a href="/buy-coin" class="btn btn-emerald" style="text-decoration:none;"><i
+                                class="fas fa-cart-plus"></i> Beli Koin Sekarang</a>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -311,6 +339,7 @@
                 document.getElementById('full_name').value = user.full_name || "";
 
                 loadHistory();
+                loadPurchases();
             } catch (err) {
                 window.location.href = '/app';
             }
@@ -331,7 +360,7 @@
 
                 tbody.innerHTML = data.map(item => `
                     <tr>
-                        <td style="color: var(--text-muted)">${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td style="color: var(--text-muted)">${new Date(item.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
                         <td><span class="bank-tag">${item.bank}</span></td>
                         <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.filename}">${item.filename}</td>
                         <td>${item.page_count} Hal</td>
@@ -340,6 +369,41 @@
                 `).join('');
             } catch (err) {
                 document.getElementById('history-body').innerHTML = '<tr><td colspan="5" class="empty-history">Gagal memuat riwayat.</td></tr>';
+            }
+        }
+
+        async function loadPurchases() {
+            try {
+                const res = await fetch('/api/user/purchases', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('purchase-body');
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty-history">Belum ada riwayat pembelian koin.</td></tr>';
+                    return;
+                }
+
+                const statusStyles = {
+                    'pending': 'background:rgba(245,158,11,0.15);color:#fbbf24;',
+                    'menunggu': 'background:rgba(96,165,250,0.15);color:#60a5fa;',
+                    'diproses': 'background:rgba(168,85,247,0.15);color:#c084fc;',
+                    'berhasil': 'background:rgba(16,185,129,0.15);color:#34d399;',
+                    'ditolak': 'background:rgba(239,68,68,0.15);color:#f87171;'
+                };
+
+                tbody.innerHTML = data.map(p => `
+                    <tr>
+                        <td style="color: var(--text-muted)">${new Date(p.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
+                        <td>${p.package_name} <span style="color:#fbbf24;font-weight:600;font-size:0.8rem;">(${p.coin_amount} Koin)</span></td>
+                        <td style="color: var(--primary); font-weight: bold;">Rp ${p.price.toLocaleString('id-ID')}</td>
+                        <td>${p.payment_method}</td>
+                        <td><span style="padding:0.2rem 0.6rem;border-radius:6px;font-size:0.7rem;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;${statusStyles[p.status] || ''}">${p.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                document.getElementById('purchase-body').innerHTML = '<tr><td colspan="5" class="empty-history">Gagal memuat riwayat pembelian.</td></tr>';
             }
         }
 

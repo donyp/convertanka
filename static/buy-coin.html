@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beli Koin - DataConverter PRO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .buy-container {
+            max-width: 720px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .buy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--white);
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.3s;
+        }
+
+        .back-btn:hover {
+            opacity: 1;
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 40px;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        .step-dot.active {
+            background: var(--primary);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .step-dot.done {
+            background: rgba(16, 185, 129, 0.4);
+        }
+
+        /* Buy Card */
+        .buy-card {
+            padding: 2.5rem;
+        }
+
+        .step-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .step-title h2 {
+            font-size: 1.4rem;
+            color: var(--white);
+            margin-bottom: 0.4rem;
+        }
+
+        .step-title p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Package Grid */
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .pkg-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pkg-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .pkg-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .pkg-card:hover::before {
+            opacity: 1;
+        }
+
+        .pkg-card.selected {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.08);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .pkg-card.selected::before {
+            opacity: 1;
+        }
+
+        .pkg-coin-icon {
+            font-size: 2rem;
+            color: #fbbf24;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .pkg-coin-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 0.2rem;
+            position: relative;
+        }
+
+        .pkg-coin-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .pkg-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 0.4rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 20px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .pkg-name {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 0.5rem;
+            position: relative;
+        }
+
+        .pkg-check {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: var(--bg-dark);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .pkg-card.selected .pkg-check {
+            display: flex;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            color: var(--white);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2rem;
+            padding-right: 2.5rem;
+        }
+
+        .form-group select option {
+            background: #1a1a2e;
+            color: var(--white);
+        }
+
+        /* Summary */
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .summary-value {
+            color: var(--white);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .summary-total .summary-value {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        /* Bank Info */
+        .bank-info-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .bank-info-card .bank-method-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .bank-info-card .bank-account-number {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 2px;
+            margin-bottom: 0.3rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .bank-info-card .bank-account-name {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--white);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .transfer-amount {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(16, 185, 129, 0.15);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .transfer-amount strong {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        /* Upload Area */
+        .upload-proof-area {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .upload-proof-area:hover {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.03);
+        }
+
+        .upload-proof-area.has-file {
+            border-color: var(--primary);
+            border-style: solid;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .upload-proof-area i {
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-proof-area.has-file i {
+            color: var(--primary);
+        }
+
+        .upload-proof-area p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .upload-proof-area .file-name {
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .proof-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 12px;
+            margin: 1rem auto 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: block;
+        }
+
+        /* Success Area */
+        .success-area {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .success-icon-big {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .success-icon-big i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .success-area h2 {
+            color: var(--white);
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-area p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .btn-wa {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-wa:hover {
+            background: #1ebe5d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        }
+
+        .success-links {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        /* Navigation Buttons */
+        .step-nav {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .step-nav .btn {
+            flex: 1;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Hidden */
+        .step-panel {
+            display: none;
+            animation: fadeSlide 0.4s ease;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Empty packages */
+        .empty-packages {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-packages i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .package-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .buy-card {
+                padding: 1.5rem;
+            }
+
+            .bank-info-card .bank-account-number {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="buy-container">
+        <header class="buy-header">
+            <div class="logo">
+                <i class="fas fa-file-shield"></i>
+                <h1>Data<span>Converter</span></h1>
+            </div>
+            <a href="/app" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </header>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step-dot active" data-step="1"></div>
+            <div class="step-dot" data-step="2"></div>
+            <div class="step-dot" data-step="3"></div>
+            <div class="step-dot" data-step="4"></div>
+            <div class="step-dot" data-step="5"></div>
+        </div>
+
+        <main class="buy-card card glass">
+            <!-- Step 1: Pilih Paket -->
+            <div class="step-panel active" id="step-1">
+                <div class="step-title">
+                    <h2><i class="fas fa-coins" style="color: #fbbf24;"></i> Pilih Paket Koin</h2>
+                    <p>Pilih paket koin yang sesuai kebutuhan Anda.</p>
+                </div>
+                <div class="package-grid" id="package-grid">
+                    <div class="empty-packages">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Memuat paket...</p>
+                    </div>
+                </div>
+                <div class="step-nav">
+                    <button class="btn btn-primary w-100" id="btn-next-1" disabled>
+                        <i class="fas fa-arrow-right"></i> Lanjutkan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Isi Data -->
+            <div class="step-panel" id="step-2">
+                <div class="step-title">
+                    <h2><i class="fas fa-user-edit" style="color: var(--primary);"></i> Isi Data Pembeli</h2>
+                    <p>Lengkapi informasi untuk proses pembelian.</p>
+                </div>
+                <form id="buyer-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                        <input type="text" id="buyer-name" placeholder="Masukkan nama lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fab fa-whatsapp"></i> No. HP / WhatsApp</label>
+                        <input type="tel" id="buyer-phone" placeholder="08xxxxxxxxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-fingerprint"></i> Kode Unik Akun</label>
+                        <input type="text" id="buyer-unique-code" placeholder="Opsional (misal: DC-1234)"
+                            style="text-transform: uppercase;">
+                        <span style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem; display:block;">Kode
+                            unik ini dapat dilihat di halaman profil Anda.</span>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-credit-card"></i> Metode Pembayaran</label>
+                        <select id="payment-method" required>
+                            <option value="" disabled selected>Pilih metode pembayaran...</option>
+                            <option value="GoPay">GoPay</option>
+                            <option value="ShopeePay">ShopeePay</option>
+                            <option value="SeaBank">SeaBank (Transfer Bank)</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="step-nav">
+                    <button class="btn-back" onclick="goStep(1)"><i class="fas fa-arrow-left"></i> Kembali</button>
+                    <button class="btn btn-primary" id="btn-next-2"><i class="fas fa-arrow-right"></i>
+                        Lanjutkan</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Ringkasan -->
+            <div class="step-panel" id="step-3">
+                <div class="step-title">
+                    <h2><i class="fas fa-receipt" style="color: var(--primary);"></i> Detail Pembelian</h2>
+                    <p>Periksa kembali pesanan Anda sebelum melanjutkan.</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span class="summary-label">Paket</span>
+                        <span class="summary-value" id="sum-package">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Jumlah Koin</span>
+                        <span class="summary-value" id="sum-coins" style="color:#fbbf24;">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Nama</span>
+                        <span class="summary-value" id="sum-name">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">No. HP</span>
+                        <span class="summary-value" id="sum-phone">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Pembayaran</span>
+                        <span class="summary-value" id="sum-method">-</span>
+                    </div>
+                    <div class="summary-row summary-total">
+                        <span class="summary-label" style="font-weight:600;">Total Bayar</span>
+                        <span class="summary-value" id="sum-price">-</span>
+                    </div>
+                </div>
+                <div class="step-nav">
+                    <button class="btn-back" onclick="goStep(2)"><i class="fas fa-arrow-left"></i> Kembali</button>
+                    <button class="btn btn-primary" id="btn-confirm"><i class="fas fa-check"></i> Konfirmasi &
+                        Beli</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Transfer & Upload -->
+            <div class="step-panel" id="step-4">
+                <div class="step-title">
+                    <h2><i class="fas fa-money-bill-transfer" style="color: var(--primary);"></i> Transfer & Upload
+                        Bukti</h2>
+                    <p>Transfer ke rekening berikut, lalu upload bukti pembayaran.</p>
+                </div>
+                <div class="bank-info-card" id="bank-info-card">
+                    <div class="bank-method-name" id="bank-method-display">-</div>
+                    <div class="bank-account-number" id="bank-account-display">-</div>
+                    <div class="bank-account-name" id="bank-name-display">a/n -</div>
+                    <button class="copy-btn" id="copy-account-btn"><i class="fas fa-copy"></i> Salin Nomor</button>
+                    <div class="transfer-amount">
+                        Jumlah Transfer: <strong id="transfer-amount-display">-</strong>
+                    </div>
+                </div>
+
+                <div class="upload-proof-area" id="upload-proof-area">
+                    <input type="file" id="proof-input" accept="image/*" hidden>
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Klik untuk upload bukti transfer</p>
+                    <p style="font-size:0.75rem; opacity:0.5; margin-top:0.3rem;">JPG, PNG, WebP (Maks. 5MB)</p>
+                    <p class="file-name" id="proof-filename" style="display:none;"></p>
+                    <img class="proof-preview" id="proof-preview" style="display:none;">
+                </div>
+
+                <div class="step-nav">
+                    <button class="btn btn-primary w-100" id="btn-upload-proof" disabled>
+                        <i class="fas fa-paper-plane"></i> Kirim Bukti Pembayaran
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 5: Success -->
+            <div class="step-panel" id="step-5">
+                <div class="success-area">
+                    <div class="success-icon-big">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2>Bukti Pembayaran Terkirim!</h2>
+                    <p>
+                        Pembayaran Anda sedang menunggu verifikasi oleh admin.<br>
+                        Silakan konfirmasi pembayaran via WhatsApp admin agar proses lebih cepat.
+                    </p>
+                    <div class="success-links">
+                        <a class="btn-wa" id="btn-wa-confirm" href="#" target="_blank">
+                            <i class="fab fa-whatsapp"></i> Konfirmasi via WhatsApp
+                        </a>
+                    </div>
+                    <div class="success-links" style="margin-top: 1rem;">
+                        <a href="/static/profile.html" class="btn btn-secondary">
+                            <i class="fas fa-history"></i> Lihat Riwayat Pembelian
+                        </a>
+                        <a href="/app" class="btn btn-secondary">
+                            <i class="fas fa-home"></i> Kembali ke Beranda
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = '/app';
+
+        // Toast System
+        const Toast = {
+            init() {
+                if (!document.getElementById('toast-container')) {
+                    const c = document.createElement('div');
+                    c.id = 'toast-container';
+                    document.body.appendChild(c);
+                }
+            },
+            show(msg, type = 'info', dur = 3000) {
+                this.init();
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                t.className = `toast toast-${type}`;
+                const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+                t.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div><div class="toast-content">${msg}</div>`;
+                c.appendChild(t);
+                setTimeout(() => t.classList.add('show'), 10);
+                setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 600) }, dur);
+            }
+        };
+        Toast.init();
+
+        const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+        // Payment account info
+        const PAYMENT_ACCOUNTS = {
+            'GoPay': { number: '085881766774', name: 'a/n Admin DataConverter', display: 'GoPay' },
+            'ShopeePay': { number: '085881766774', name: 'a/n Admin DataConverter', display: 'ShopeePay' },
+            'SeaBank': { number: '901972750890', name: 'a/n Admin DataConverter', display: 'SeaBank' }
+        };
+
+        const WA_ADMIN = '6285117778351'; // WhatsApp admin number
+
+        let selectedPackage = null;
+        let currentStep = 1;
+        let purchaseId = null;
+        let orderNumber = null;
+        let proofFile = null;
+
+        // Load packages
+        async function loadPackages() {
+            try {
+                const res = await fetch('/api/packages');
+                const pkgs = await res.json();
+                const grid = document.getElementById('package-grid');
+
+                if (pkgs.length === 0) {
+                    grid.innerHTML = '<div class="empty-packages"><i class="fas fa-box-open"></i><p>Belum ada paket koin tersedia. Hubungi admin.</p></div>';
+                    return;
+                }
+
+                grid.innerHTML = pkgs.map(p => `
+                    <div class="pkg-card" data-id="${p.id}" data-name="${p.name}" data-coins="${p.coin_amount}" data-price="${p.price}">
+                        <div class="pkg-check"><i class="fas fa-check"></i></div>
+                        <div class="pkg-coin-icon"><i class="fas fa-coins"></i></div>
+                        <div class="pkg-coin-amount">${p.coin_amount}</div>
+                        <div class="pkg-coin-label">Koin</div>
+                        <div class="pkg-price">Rp ${p.price.toLocaleString('id-ID')}</div>
+                        <div class="pkg-name">${p.name}</div>
+                    </div>
+                `).join('');
+
+                // Package click
+                grid.querySelectorAll('.pkg-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        grid.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedPackage = {
+                            id: parseInt(card.dataset.id),
+                            name: card.dataset.name,
+                            coins: parseInt(card.dataset.coins),
+                            price: parseInt(card.dataset.price)
+                        };
+                        document.getElementById('btn-next-1').disabled = false;
+                    });
+                });
+            } catch (e) {
+                document.getElementById('package-grid').innerHTML = '<div class="empty-packages"><i class="fas fa-exclamation-triangle"></i><p>Gagal memuat paket. Coba refresh.</p></div>';
+            }
+        }
+
+        // Step Navigation
+        function goStep(step) {
+            currentStep = step;
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`step-${step}`).classList.add('active');
+
+            document.querySelectorAll('.step-dot').forEach(d => {
+                const s = parseInt(d.dataset.step);
+                d.classList.remove('active', 'done');
+                if (s === step) d.classList.add('active');
+                else if (s < step) d.classList.add('done');
+            });
+        }
+
+        // Step 1 → 2
+        document.getElementById('btn-next-1').addEventListener('click', () => {
+            if (!selectedPackage) {
+                Toast.show('Pilih paket terlebih dahulu', 'warning');
+                return;
+            }
+            goStep(2);
+        });
+
+        // Step 2 → 3
+        document.getElementById('btn-next-2').addEventListener('click', () => {
+            const name = document.getElementById('buyer-name').value.trim();
+            const phone = document.getElementById('buyer-phone').value.trim();
+            const method = document.getElementById('payment-method').value;
+
+            if (!name) { Toast.show('Nama lengkap harus diisi', 'warning'); return; }
+            if (!phone) { Toast.show('No. HP harus diisi', 'warning'); return; }
+            if (!method) { Toast.show('Pilih metode pembayaran', 'warning'); return; }
+
+            // Fill summary
+            document.getElementById('sum-package').textContent = selectedPackage.name;
+            document.getElementById('sum-coins').innerHTML = `<i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${selectedPackage.coins} Koin`;
+            document.getElementById('sum-name').textContent = name;
+            document.getElementById('sum-phone').textContent = phone;
+            document.getElementById('sum-method').textContent = method;
+            document.getElementById('sum-price').textContent = `Rp ${selectedPackage.price.toLocaleString('id-ID')}`;
+
+            goStep(3);
+        });
+
+        // Step 3 → 4 (Confirm & Create Purchase)
+        document.getElementById('btn-confirm').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-confirm');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            const fd = new FormData();
+            fd.append('package_id', selectedPackage.id);
+            fd.append('buyer_name', document.getElementById('buyer-name').value.trim());
+            fd.append('buyer_phone', document.getElementById('buyer-phone').value.trim());
+
+            const uCode = document.getElementById('buyer-unique-code').value.trim();
+            if (uCode) fd.append('buyer_unique_code', uCode);
+
+            fd.append('payment_method', document.getElementById('payment-method').value);
+
+            try {
+                const res = await fetch('/api/purchases', {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Gagal membuat pesanan');
+
+                purchaseId = data.purchase_id;
+                orderNumber = data.order_number;
+                const method = data.payment_method;
+
+                // Show bank info
+                const acct = PAYMENT_ACCOUNTS[method];
+                if (acct) {
+                    document.getElementById('bank-method-display').textContent = acct.display;
+                    document.getElementById('bank-account-display').textContent = acct.number;
+                    document.getElementById('bank-name-display').textContent = acct.name;
+                }
+                document.getElementById('transfer-amount-display').textContent = `Rp ${data.price.toLocaleString('id-ID')}`;
+
+                Toast.show('Pesanan berhasil dibuat!', 'success');
+                goStep(4);
+            } catch (e) {
+                Toast.show(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Konfirmasi & Beli';
+            }
+        });
+
+        // Copy account number
+        document.getElementById('copy-account-btn').addEventListener('click', () => {
+            const num = document.getElementById('bank-account-display').textContent;
+            navigator.clipboard.writeText(num).then(() => {
+                Toast.show('Nomor berhasil disalin!', 'success');
+            });
+        });
+
+        // Upload proof
+        const proofArea = document.getElementById('upload-proof-area');
+        const proofInput = document.getElementById('proof-input');
+
+        proofArea.addEventListener('click', () => proofInput.click());
+
+        proofInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                Toast.show('Ukuran file maksimal 5MB', 'warning');
+                return;
+            }
+
+            proofFile = file;
+            proofArea.classList.add('has-file');
+            document.getElementById('proof-filename').style.display = 'block';
+            document.getElementById('proof-filename').textContent = file.name;
+
+            // Preview
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const preview = document.getElementById('proof-preview');
+                preview.src = ev.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            document.getElementById('btn-upload-proof').disabled = false;
+        });
+
+        // Submit proof → Step 5
+        document.getElementById('btn-upload-proof').addEventListener('click', async () => {
+            if (!proofFile || !purchaseId) return;
+
+            const btn = document.getElementById('btn-upload-proof');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengupload...';
+
+            const fd = new FormData();
+            fd.append('file', proofFile);
+
+            try {
+                const res = await fetch(`/api/purchases/${purchaseId}/upload-proof`, {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Gagal upload bukti');
+
+                // Set WA link professional template
+                const buyerName = document.getElementById('buyer-name').value.trim();
+                const uCode = document.getElementById('buyer-unique-code').value.trim();
+                const codeText = uCode ? `\nKode Akun: ${uCode}` : '';
+
+                const waMsg = encodeURIComponent(
+                    `Halo Admin DataConverter,\n\nSaya telah melakukan pembayaran untuk pemesanan koin. Berikut adalah rincian pembayaran saya:\n\n` +
+                    `DETAIL PESANAN\n` +
+                    `-------------------\n` +
+                    `No. Referensi: ${orderNumber}\n` +
+                    `Paket: ${selectedPackage.name} (${selectedPackage.coins} Koin)\n` +
+                    `Metode: ${document.getElementById('payment-method').value}\n` +
+                    `Nominal: Rp ${selectedPackage.price.toLocaleString('id-ID')}\n\n` +
+                    `DETAIL PEMBELI\n` +
+                    `-------------------\n` +
+                    `Nama: ${buyerName}${codeText}\n\n` +
+                    `Bukti pembayaran telah berhasil saya upload di sistem.\n\n` +
+                    `Mohon bantuannya untuk melakukan verifikasi pesanan ini. Terima kasih.`
+                );
+                document.getElementById('btn-wa-confirm').href = `https://wa.me/${WA_ADMIN}?text=${waMsg}`;
+
+                Toast.show('Bukti pembayaran berhasil diupload!', 'success');
+                goStep(5);
+            } catch (e) {
+                Toast.show(e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Bukti Pembayaran';
+            }
+        });
+
+        // Init
+        loadPackages();
+    </script>
+</body>
+
+</html>

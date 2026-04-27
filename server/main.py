@@ -13,6 +13,7 @@ import re
 import math
 from datetime import datetime, timedelta
 import secrets
+import uuid
 import pdfplumber
 from fastapi import BackgroundTasks
 
@@ -23,7 +24,7 @@ from server.excel_writer import generate_excel
 from server.coin_manager import calculate_cost # Keeping logic, but will use DB balance
 
 from server.database import engine, Base, get_db
-from server.models import User, ConversionRecord, AdminLog, CoinPackage, BroadcastNotification, PendingRegistration
+from server.models import User, ConversionRecord, AdminLog, CoinPackage, CoinPurchase, BroadcastNotification, PendingRegistration
 from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
 from server.email_sender import send_otp_email
 
@@ -68,7 +69,12 @@ def sanitize_header_value(value: str) -> str:
     sanitized = re.sub(r'[:"<>|?*\\/]', '', sanitized)
     return sanitized.strip()
 
+# Create uploads directory for payment proofs
+UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "proofs")
+os.makedirs(UPLOADS_DIR, exist_ok=True)
+
 # Mount static files
+app.mount("/uploads", StaticFiles(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")), name="uploads")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -82,6 +88,10 @@ async def read_app():
 @app.get("/admin")
 async def read_admin():
     return FileResponse("static/admin.html")
+
+@app.get("/buy-coin")
+async def read_buy_coin():
+    return FileResponse("static/buy-coin.html")
 
 # --- AUTH ENDPOINTS ---
 
@@ -178,14 +188,14 @@ async def verify_email(
     if current_user.verification_otp_expiry < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Kode OTP sudah kedaluwarsa.")
         
-    # Success: Verify email and add 30 coins
+    # Success: Verify email and add 10 coins
     current_user.email_verified = True
-    current_user.coins += 30
+    current_user.coins += 10
     current_user.verification_otp = None
     current_user.verification_otp_expiry = None
     db.commit()
     
-    return {"message": "Verifikasi berhasil! 30 koin gratis telah ditambahkan ke akun Anda.", "coins": current_user.coins}
+    return {"message": "Verifikasi berhasil! 10 koin gratis telah ditambahkan ke akun Anda.", "coins": current_user.coins}
 
 @app.post("/api/auth/login")
 @limiter.limit("10/minute")
@@ -435,8 +445,8 @@ async def delete_user(user_id: int, db: Session = Depends(get_db), admin: User =
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User tidak ditemukan.")
-    if user.is_admin:
-        raise HTTPException(status_code=400, detail="Tidak bisa menghapus admin.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Tidak bisa menghapus akun Anda sendiri.")
     
     email = user.email
     db.query(ConversionRecord).filter(ConversionRecord.user_id == user_id).delete()
@@ -444,6 +454,20 @@ async def delete_user(user_id: int, db: Session = Depends(get_db), admin: User =
     log_admin_action(db, admin.id, "Hapus User", email)
     db.commit()
     return {"message": f"User {email} berhasil dihapus."}
+
+@app.post("/api/admin/toggle-admin/{user_id}")
+async def toggle_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Tidak bisa mengubah status admin sendiri.")
+    
+    user.is_admin = not user.is_admin
+    status_text = "dijadikan Admin" if user.is_admin else "dicabut akses Admin"
+    log_admin_action(db, admin.id, f"Akses Admin {status_text}", user.email)
+    db.commit()
+    return {"message": f"Akses {user.email} berhasil {status_text}.", "is_admin": user.is_admin}
 
 # --- COIN PACKAGES ---
 
@@ -477,10 +501,182 @@ async def delete_package(pkg_id: int, db: Session = Depends(get_db), admin: User
     if not pkg:
         raise HTTPException(status_code=404, detail="Paket tidak ditemukan.")
     name = pkg.name
-    db.delete(pkg)
-    log_admin_action(db, admin.id, "Hapus Paket Koin", name)
+    pkg.is_active = False
+    log_admin_action(db, admin.id, "Soft Delete Paket Koin", name)
     db.commit()
-    return {"message": f"Paket '{name}' berhasil dihapus."}
+    return {"message": f"Paket '{name}' berhasil dinonaktifkan."}
+
+# --- COIN PURCHASES ---
+
+@app.post("/api/purchases")
+async def create_purchase(
+    package_id: int = Form(...),
+    buyer_name: str = Form(...),
+    buyer_phone: str = Form(...),
+    buyer_unique_code: str = Form(None),
+    payment_method: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    pkg = db.query(CoinPackage).filter(CoinPackage.id == package_id, CoinPackage.is_active == True).first()
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Paket tidak ditemukan atau tidak aktif.")
+    
+    # Generate order number: INV-YYMMDD-HEX
+    date_str = datetime.utcnow().strftime("%y%m%d")
+    random_hex = secrets.token_hex(3).upper()
+    order_num = f"INV-{date_str}-{random_hex}"
+    
+    purchase = CoinPurchase(
+        order_number=order_num,
+        user_id=current_user.id,
+        package_id=pkg.id,
+        buyer_name=buyer_name,
+        buyer_phone=buyer_phone,
+        buyer_unique_code=buyer_unique_code,
+        payment_method=payment_method,
+        package_name=pkg.name,
+        coin_amount=pkg.coin_amount,
+        price=pkg.price,
+        status="pending"
+    )
+    db.add(purchase)
+    db.commit()
+    db.refresh(purchase)
+    return {
+        "message": "Pesanan berhasil dibuat. Silakan transfer dan upload bukti pembayaran.",
+        "purchase_id": purchase.id,
+        "order_number": purchase.order_number,
+        "price": purchase.price,
+        "payment_method": purchase.payment_method
+    }
+
+@app.post("/api/purchases/{purchase_id}/upload-proof")
+async def upload_proof(
+    purchase_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    purchase = db.query(CoinPurchase).filter(
+        CoinPurchase.id == purchase_id,
+        CoinPurchase.user_id == current_user.id
+    ).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan.")
+    if purchase.status not in ["pending", "ditolak"]:
+        raise HTTPException(status_code=400, detail="Bukti sudah diupload atau pesanan sedang diproses.")
+    
+    # Validate file type
+    allowed_ext = [".jpg", ".jpeg", ".png", ".webp"]
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_ext:
+        raise HTTPException(status_code=400, detail="Format file tidak didukung. Gunakan JPG, PNG, atau WebP.")
+    
+    # Save file with unique name
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(UPLOADS_DIR, filename)
+    with open(filepath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    
+    # Delete old proof if exists
+    if purchase.proof_filename:
+        old_path = os.path.join(UPLOADS_DIR, purchase.proof_filename)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    
+    purchase.proof_filename = filename
+    purchase.status = "menunggu"
+    purchase.updated_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Bukti pembayaran berhasil diupload. Menunggu verifikasi admin."}
+
+@app.get("/api/user/purchases")
+async def get_user_purchases(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    purchases = db.query(CoinPurchase).filter(
+        CoinPurchase.user_id == current_user.id
+    ).order_by(CoinPurchase.created_at.desc()).all()
+    return [{
+        "id": p.id,
+        "order_number": p.order_number if getattr(p, 'order_number', None) else f"INV-OLD-{p.id}",
+        "package_name": p.package_name,
+        "coin_amount": p.coin_amount,
+        "price": p.price,
+        "payment_method": p.payment_method,
+        "status": p.status,
+        "created_at": p.created_at.isoformat() + "Z",
+        "updated_at": p.updated_at.isoformat() + "Z" if p.updated_at else None
+    } for p in purchases]
+
+@app.get("/api/admin/purchases")
+async def get_admin_purchases(
+    status: str = None,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    query = db.query(CoinPurchase).order_by(CoinPurchase.created_at.desc())
+    if status and status != "semua":
+        query = query.filter(CoinPurchase.status == status)
+    purchases = query.limit(200).all()
+    result = []
+    for p in purchases:
+        user = db.query(User).filter(User.id == p.user_id).first()
+        result.append({
+            "id": p.id,
+            "order_number": p.order_number if getattr(p, 'order_number', None) else f"INV-OLD-{p.id}",
+            "user_email": user.email if user else "Unknown",
+            "user_unique_code": user.unique_code if user else "-",
+            "buyer_name": p.buyer_name,
+            "buyer_phone": p.buyer_phone,
+            "buyer_unique_code": p.buyer_unique_code if getattr(p, 'buyer_unique_code', None) else "-",
+            "package_name": p.package_name,
+            "coin_amount": p.coin_amount,
+            "price": p.price,
+            "payment_method": p.payment_method,
+            "status": p.status,
+            "proof_filename": p.proof_filename,
+            "created_at": p.created_at.isoformat() + "Z",
+            "updated_at": p.updated_at.isoformat() + "Z" if p.updated_at else None
+        })
+    return result
+
+@app.put("/api/admin/purchases/{purchase_id}/status")
+async def update_purchase_status(
+    purchase_id: int,
+    new_status: str = Form(...),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    valid_statuses = ["pending", "menunggu", "diproses", "berhasil", "ditolak"]
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Status tidak valid. Pilih: {', '.join(valid_statuses)}")
+    
+    purchase = db.query(CoinPurchase).filter(CoinPurchase.id == purchase_id).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan.")
+    
+    old_status = purchase.status
+    purchase.status = new_status
+    purchase.updated_at = datetime.utcnow()
+    
+    # Auto-add coins when status changes to "berhasil"
+    order_id_str = purchase.order_number if getattr(purchase, 'order_number', None) else f"#{purchase.id}"
+    message = f"Status pembelian {order_id_str} diubah dari '{old_status}' ke '{new_status}'."
+    if new_status == "berhasil" and old_status != "berhasil":
+        user = db.query(User).filter(User.id == purchase.user_id).first()
+        if user:
+            user.coins += purchase.coin_amount
+            message += f" {purchase.coin_amount} koin ditambahkan ke {user.email}."
+            log_admin_action(db, admin.id, f"Approve Pembelian {order_id_str}", f"+{purchase.coin_amount} koin → {user.email}")
+    else:
+        log_admin_action(db, admin.id, f"Update Status Pembelian {order_id_str}", f"{old_status} → {new_status}")
+    
+    db.commit()
+    return {"message": message}
 
 # --- BROADCAST NOTIFICATIONS ---
 

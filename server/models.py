@@ -67,6 +67,37 @@ class CoinPackage(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class CoinPurchase(Base):
+    __tablename__ = "coin_purchases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_number = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    package_id = Column(Integer, ForeignKey("coin_packages.id"))
+
+    # Buyer info from form
+    buyer_name = Column(String, nullable=False)
+    buyer_phone = Column(String, nullable=False)
+    buyer_unique_code = Column(String, nullable=True)
+    payment_method = Column(String, nullable=False)  # "GoPay", "ShopeePay", "SeaBank"
+
+    # Purchase details (snapshot from package at time of purchase)
+    package_name = Column(String, nullable=False)
+    coin_amount = Column(Integer, nullable=False)
+    price = Column(Integer, nullable=False)
+
+    # Status: pending → menunggu → diproses → berhasil / ditolak
+    status = Column(String, default="pending")
+
+    # Payment proof image filename
+    proof_filename = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User")
+    package = relationship("CoinPackage")
+
 class BroadcastNotification(Base):
     __tablename__ = "broadcast_notifications"
 

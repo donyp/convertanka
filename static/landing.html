@@ -649,9 +649,9 @@
             <!-- Populated by JS -->
             <div class="pricing-card">
                 <h3>Starter</h3>
-                <div class="pricing-coins">30 <span>Koin</span></div>
+                <div class="pricing-coins">10 <span>Koin</span></div>
                 <div class="pricing-price">Gratis (Pendaftaran)</div>
-                <div class="pricing-feature"><i class="fas fa-check"></i> 60 Halaman konversi</div>
+                <div class="pricing-feature"><i class="fas fa-check"></i> 20 Halaman konversi</div>
                 <div class="pricing-feature"><i class="fas fa-check"></i> Semua bank didukung</div>
             </div>
         </div>
@@ -660,7 +660,7 @@
     <!-- CTA -->
     <section class="cta">
         <h2>Siap Menghemat Waktu Anda?</h2>
-        <p>Daftar sekarang dan dapatkan 30 koin gratis untuk memulai konversi pertama Anda.</p>
+        <p>Daftar sekarang dan dapatkan 10 koin gratis untuk memulai konversi pertama Anda.</p>
         <a href="/app" class="btn-hero-primary" style="display: inline-flex;"><i class="fas fa-rocket"></i> Mulai
             Sekarang — Gratis</a>
     </section>
@@ -679,15 +679,25 @@
                 const pkgs = await res.json();
                 if (pkgs.length > 0) {
                     const grid = document.getElementById('pricing-cards');
-                    const starterCard = grid.innerHTML; // Keep the free tier card
+                    const starterCard = `
+                        <div class="pricing-card">
+                            <h3>Starter</h3>
+                            <div class="pricing-coins">10 <span>Koin</span></div>
+                            <div class="pricing-price">Gratis (Pendaftaran)</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> 20 Halaman konversi</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Semua bank didukung</div>
+                            <a href="/app" class="btn-hero-primary" style="display:inline-flex;margin-top:1.5rem;font-size:0.9rem;padding:0.7rem 1.5rem;justify-content:center;width:100%;text-decoration:none;"><i class="fas fa-user-plus"></i> Daftar Gratis</a>
+                        </div>
+                    `;
                     const dynamicCards = pkgs.map((p, i) => `
-                        <div class="pricing-card ${i === Math.floor(pkgs.length / 2) ? 'popular' : ''}">
+                        <div class="pricing-card ${i === 0 ? 'popular' : ''}">
                             <h3>${p.name}</h3>
                             <div class="pricing-coins">${p.coin_amount} <span>Koin</span></div>
                             <div class="pricing-price">Rp ${p.price.toLocaleString('id-ID')}</div>
                             <div class="pricing-feature"><i class="fas fa-check"></i> ${p.coin_amount * 2} Halaman konversi</div>
                             <div class="pricing-feature"><i class="fas fa-check"></i> Semua bank didukung</div>
-                            <div class="pricing-feature"><i class="fas fa-check"></i> Hubungi admin untuk top-up</div>
+                            <div class="pricing-feature"><i class="fas fa-check"></i> Proses cepat via admin</div>
+                            <a href="/buy-coin" class="btn-hero-primary" style="display:inline-flex;margin-top:1.5rem;font-size:0.9rem;padding:0.7rem 1.5rem;justify-content:center;width:100%;text-decoration:none;"><i class="fas fa-cart-plus"></i> Beli Sekarang</a>
                         </div>
                     `).join('');
                     grid.innerHTML = starterCard + dynamicCards;

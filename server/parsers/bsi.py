@@ -45,6 +45,59 @@ def parse_bsi(pdf_path):
                 period_match = re.search(r"Date\s*:\s*([\d\w\-\s]+)", text)
                 if period_match: metadata["period"] = period_match.group(1).strip()
 
+            # Attempt to extract explicit table first (New BSI Format)
+            tables = page.extract_tables()
+            processed_from_table = False
+            for table in tables:
+                if not table or not table[0]: continue
+                header_row = [str(cell).replace('\n', ' ').strip().upper() for cell in table[0] if cell]
+                if "TANGGAL" in header_row and "MUTASI" in header_row and "SALDO" in header_row:
+                    processed_from_table = True
+                    headers = [str(c).replace('\n', ' ').strip().upper() if c else "" for c in table[0]]
+                    try:
+                        date_idx = headers.index("TANGGAL")
+                        try: time_idx = headers.index("TRX TIME")
+                        except: time_idx = -1
+                        dk_idx = headers.index("D/K")
+                        mutasi_idx = headers.index("MUTASI")
+                        saldo_idx = headers.index("SALDO")
+                        desc_idx = headers.index("KETERANGAN")
+                        try: trxid_idx = headers.index("TRXID")
+                        except: trxid_idx = -1
+                    except ValueError:
+                        processed_from_table = False
+                        break # Header mismatch, fallback
+                    
+                    for row in table[1:]:
+                        if not row or not row[date_idx]: continue
+                        raw_date = str(row[date_idx]).replace('\n', '').strip()
+                        raw_time = str(row[time_idx]).replace('\n', '').strip().replace(".", ":") if time_idx != -1 else ""
+                        
+                        if len(raw_date) == 8 and raw_date.isdigit():
+                            dt = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}"
+                        else:
+                            dt = raw_date
+                        if raw_time:
+                            dt = f"{dt} {raw_time}"
+                            
+                        ft = str(row[trxid_idx]).replace('\n', ' ').strip() if trxid_idx != -1 else ""
+                        desc = str(row[desc_idx]).replace('\n', ' ').strip()
+                        dk = str(row[dk_idx]).strip().upper()
+                        mutasi = clean_number(row[mutasi_idx])
+                        saldo = clean_number(row[saldo_idx])
+                        
+                        db = "DB" if dk == "D" else ""
+                        cr = "CR" if dk == "K" else ""
+                        
+                        # Fix metadata for alternative DK format
+                        if dk == "D" and not db: db = "DB"
+                        if dk == "K" and not cr: cr = "CR"
+                        
+                        data.append([dt.strip(), ft, desc, "IDR", mutasi, db, cr, saldo])
+            
+            if processed_from_table:
+                continue
+
             all_words = page.extract_words()
             if not all_words: continue
             

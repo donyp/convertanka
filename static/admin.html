@@ -507,6 +507,7 @@
             <button class="admin-tab active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
             <button class="admin-tab" data-tab="users"><i class="fas fa-users"></i> Users</button>
             <button class="admin-tab" data-tab="packages"><i class="fas fa-box"></i> Paket Koin</button>
+            <button class="admin-tab" data-tab="purchases"><i class="fas fa-shopping-cart"></i> Pembelian</button>
             <button class="admin-tab" data-tab="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
             <button class="admin-tab" data-tab="logs"><i class="fas fa-clipboard-list"></i> Log Aktivitas</button>
         </div>
@@ -587,6 +588,7 @@
                                 <th>Kode Unik</th>
                                 <th>Koin</th>
                                 <th>Terdaftar</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="admin-list-body">
@@ -676,6 +678,54 @@
                     <p class="empty-table">Memuat...</p>
                 </div>
             </div>
+        </div>
+
+        <!-- TAB: Pembelian -->
+        <div class="tab-content" id="tab-purchases">
+            <div class="section-card">
+                <h3><i class="fas fa-shopping-cart"></i> Manajemen Pembelian Koin <span class="count-badge"
+                        id="purchase-count">0</span></h3>
+                <div style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-sm btn-success-sm purchase-filter active" data-status="semua">Semua</button>
+                    <button class="btn-sm btn-warn purchase-filter" data-status="menunggu">Menunggu</button>
+                    <button class="btn-sm purchase-filter" data-status="diproses"
+                        style="background:rgba(168,85,247,0.15);color:#c084fc;">Diproses</button>
+                    <button class="btn-sm btn-success-sm purchase-filter" data-status="berhasil">Berhasil</button>
+                    <button class="btn-sm btn-danger purchase-filter" data-status="ditolak">Ditolak</button>
+                    <button class="btn-sm purchase-filter" data-status="pending"
+                        style="background:rgba(245,158,11,0.08);color:#fbbf24;">Pending</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Pembeli</th>
+                                <th>Paket</th>
+                                <th>Harga</th>
+                                <th>Metode</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchase-list-body">
+                            <tr>
+                                <td colspan="9" class="empty-table">Memuat...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proof Modal -->
+        <div id="proof-modal"
+            style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;display:none;align-items:center;justify-content:center;cursor:pointer;"
+            onclick="this.style.display='none'">
+            <img id="proof-modal-img"
+                style="max-width:90%;max-height:90%;border-radius:12px;border:2px solid rgba(255,255,255,0.1);" />
         </div>
 
         <!-- TAB: Logs -->
@@ -772,6 +822,14 @@
                         <td><code class="badge-code">${u.unique_code}</code></td>
                         <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
                         <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-warn" onclick="toggleAdmin(${u.id})" title="Turunkan ke User">
+                                    <i class="fas fa-user-minus"></i>
+                                </button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
                     </tr>`).join('');
 
                 document.getElementById('user-list-body').innerHTML = regulars.length === 0
@@ -787,6 +845,9 @@
                                 <button class="btn-sm ${u.is_active ? 'btn-warn' : 'btn-success-sm'}" onclick="toggleUser(${u.id})" title="${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
                                     <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check'}"></i>
                                 </button>
+                                <button class="btn-sm btn-secondary" onclick="toggleAdmin(${u.id})" title="Jadikan Admin">
+                                    <i class="fas fa-user-shield"></i>
+                                </button>
                                 <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -796,6 +857,13 @@
 
         async function toggleUser(id) {
             const res = await fetch(`/api/admin/toggle-user/${id}`, { method: 'POST', headers: authHeaders });
+            const data = await res.json();
+            Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+            if (res.ok) loadUsers();
+        }
+
+        async function toggleAdmin(id) {
+            const res = await fetch(`/api/admin/toggle-admin/${id}`, { method: 'POST', headers: authHeaders });
             const data = await res.json();
             Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
             if (res.ok) loadUsers();
@@ -927,12 +995,93 @@
             finally { setLoading('btn-create-admin', false); }
         });
 
+        // ---- PURCHASES ----
+        let currentPurchaseFilter = 'semua';
+
+        document.querySelectorAll('.purchase-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.purchase-filter').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPurchaseFilter = btn.dataset.status;
+                loadAdminPurchases();
+            });
+        });
+
+        async function loadAdminPurchases() {
+            try {
+                const url = currentPurchaseFilter === 'semua' ? '/api/admin/purchases' : `/api/admin/purchases?status=${currentPurchaseFilter}`;
+                const res = await fetch(url, { headers: authHeaders });
+                const purchases = await res.json();
+                const el = document.getElementById('purchase-list-body');
+                document.getElementById('purchase-count').textContent = purchases.length;
+
+                if (purchases.length === 0) {
+                    el.innerHTML = '<tr><td colspan="9" class="empty-table">Tidak ada data pembelian.</td></tr>';
+                    return;
+                }
+
+                const statusStyles = {
+                    'pending': 'background:rgba(245,158,11,0.15);color:#fbbf24;',
+                    'menunggu': 'background:rgba(96,165,250,0.15);color:#60a5fa;',
+                    'diproses': 'background:rgba(168,85,247,0.15);color:#c084fc;',
+                    'berhasil': 'background:rgba(16,185,129,0.15);color:#34d399;',
+                    'ditolak': 'background:rgba(239,68,68,0.15);color:#f87171;'
+                };
+
+                el.innerHTML = purchases.map(p => `<tr>
+                    <td style="color:var(--text-muted); font-size:0.8rem;">
+                        ${p.order_number || `#${p.id}`}<br>
+                        <span style="font-size:0.65rem;opacity:0.6;">(ID: ${p.id})</span>
+                    </td>
+                    <td>${p.user_email}<br><code class="badge-code" style="font-size:0.65rem;">${p.user_unique_code}</code></td>
+                    <td>${p.buyer_name}<br><span style="color:var(--text-muted);font-size:0.75rem;">${p.buyer_phone}</span>
+                        ${p.buyer_unique_code && p.buyer_unique_code !== '-' ? `<br><code class="badge-code" style="font-size:0.65rem;background:rgba(255,255,255,0.1);color:#fff;">${p.buyer_unique_code}</code>` : ''}
+                    </td>
+                    <td>${p.package_name} <span style="color:#fbbf24;font-size:0.75rem;">(${p.coin_amount})</span></td>
+                    <td style="color:var(--primary);font-weight:600;">Rp ${p.price.toLocaleString()}</td>
+                    <td>${p.payment_method}</td>
+                    <td><span class="badge" style="${statusStyles[p.status] || ''}">${p.status.toUpperCase()}</span></td>
+                    <td style="color:var(--text-muted);white-space:nowrap;font-size:0.8rem;">${new Date(p.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
+                    <td>
+                        <div class="action-btns" style="flex-direction:column;gap:0.3rem;">
+                            ${p.proof_filename ? `<button class="btn-sm btn-success-sm" onclick="viewProof('${p.proof_filename}')" title="Lihat Bukti"><i class="fas fa-image"></i></button>` : '<span style="font-size:0.7rem;color:var(--text-muted);">No proof</span>'}
+                            ${p.status !== 'berhasil' ? `<select onchange="updatePurchaseStatus(${p.id}, this.value)" style="padding:0.25rem 0.4rem;border-radius:6px;font-size:0.7rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--white);cursor:pointer;font-family:inherit;">
+                                <option value="" disabled selected>Ubah...</option>
+                                <option value="diproses">Diproses</option>
+                                <option value="berhasil">✅ Berhasil</option>
+                                <option value="ditolak">❌ Ditolak</option>
+                            </select>` : '<span class="badge badge-active">Done</span>'}
+                        </div>
+                    </td>
+                </tr>`).join('');
+            } catch (e) { console.error('Error loading purchases:', e); }
+        }
+
+        function viewProof(filename) {
+            const modal = document.getElementById('proof-modal');
+            document.getElementById('proof-modal-img').src = `/uploads/proofs/${filename}`;
+            modal.style.display = 'flex';
+        }
+
+        async function updatePurchaseStatus(id, newStatus) {
+            if (!newStatus) return;
+            const fd = new FormData();
+            fd.append('new_status', newStatus);
+            try {
+                const res = await fetch(`/api/admin/purchases/${id}/status`, { method: 'PUT', headers: authHeaders, body: fd });
+                const data = await res.json();
+                Toast.show(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) { loadAdminPurchases(); loadStats(); loadUsers(); loadLogs(); }
+            } catch (e) { Toast.show('Gagal mengubah status', 'error'); }
+        }
+
         // Load all data in parallel
         function initAdmin() {
             Promise.all([
                 loadStats(),
                 loadUsers(),
                 loadPackages(),
+                loadAdminPurchases(),
                 loadBroadcasts(),
                 loadLogs()
             ]).then(() => {
