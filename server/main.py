@@ -35,8 +35,14 @@ from dotenv import load_dotenv
 # Load Environment Variables
 load_dotenv()
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables safely
+if os.getenv("DATABASE_URL"):
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Warning: Database creation failed: {e}")
+else:
+    print("Warning: DATABASE_URL not set. Database tables not created.")
 
 app = FastAPI(title="MutasiConvert API")
 
@@ -69,12 +75,29 @@ def sanitize_header_value(value: str) -> str:
     sanitized = re.sub(r'[:"<>|?*\\/]', '', sanitized)
     return sanitized.strip()
 
-# Create uploads directory for payment proofs
+# Create uploads directory for payment proofs safely (handles read-only Vercel FS)
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "proofs")
-os.makedirs(UPLOADS_DIR, exist_ok=True)
+try:
+    if not os.path.exists(UPLOADS_DIR):
+        os.makedirs(UPLOADS_DIR, exist_ok=True)
+except Exception as e:
+    print(f"FileSystem Warning: Could not create {UPLOADS_DIR}: {e}")
+    # Fallback for Vercel
+    UPLOADS_DIR = "/tmp/proofs"
+    try:
+        os.makedirs(UPLOADS_DIR, exist_ok=True)
+    except:
+        pass
 
-# Mount static files
-app.mount("/uploads", StaticFiles(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")), name="uploads")
+# Mount static files safely
+UPLOADS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+if os.path.exists(UPLOADS_PATH):
+    app.mount("/uploads", StaticFiles(directory=UPLOADS_PATH), name="uploads")
+else:
+    # Use tmp as placeholder if uploads doesn't exist
+    os.makedirs("/tmp/uploads", exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
