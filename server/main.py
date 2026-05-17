@@ -95,9 +95,9 @@ else:
     os.makedirs("/tmp/uploads", exist_ok=True)
     app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
+# Define paths before mounting
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/")
 async def read_landing():
