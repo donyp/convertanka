@@ -97,21 +97,23 @@ else:
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+
 @app.get("/")
 async def read_landing():
-    return FileResponse("static/landing.html")
+    return FileResponse(os.path.join(STATIC_DIR, "landing.html"))
 
 @app.get("/app")
 async def read_app():
-    return FileResponse("static/index.html")
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 @app.get("/admin")
 async def read_admin():
-    return FileResponse("static/admin.html")
+    return FileResponse(os.path.join(STATIC_DIR, "admin.html"))
 
 @app.get("/buy-coin")
 async def read_buy_coin():
-    return FileResponse("static/buy-coin.html")
+    return FileResponse(os.path.join(STATIC_DIR, "buy-coin.html"))
 
 # --- AUTH ENDPOINTS ---
 
