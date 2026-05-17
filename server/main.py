@@ -741,13 +741,23 @@ async def get_notifications(db: Session = Depends(get_db), current_user: User = 
 # --- CONVERSION ENDPOINTS ---
 
 def detect_bank_id(text: str) -> str:
-    text_upper = text.upper()
-    if "BANK CENTRAL ASIA" in text_upper or "REKENING KORAN" in text_upper or "NO. REKENING" in text_upper:
+    text_upper = text.upper().replace(" ", "")
+    # BCA
+    if "BANKCENTRALASIA" in text_upper or "REKENINGKORAN" in text_upper or "NOREKENING" in text_upper:
         return "bca"
-    if "BANK SYARIAH INDONESIA" in text_upper or "STATEMENT OF ACCOUNT" in text_upper or "FT NUMBER" in text_upper:
+    # BSI
+    if "BANKSYARIAHINDONESIA" in text_upper or "STATEMENTOFACCOUNT" in text_upper or "FTNUMBER" in text_upper:
         return "bsi"
-    if "BANK MUAMALAT" in text_upper or "REFERENCE NUMBER" in text_upper or "TRANSACTION DATE" in text_upper:
+    # Muamalat
+    if "MUAMALAT" in text_upper or "REFERENCENUMBER" in text_upper or "TRANSACTIONDATE" in text_upper or "EFFECTIVEDATE" in text_upper:
         return "muamalat"
+    
+    # Fallback to loose check
+    t_orig = text.upper()
+    if "BCA" in t_orig and "MUTASI" in t_orig: return "bca"
+    if "BSI" in t_orig and "ACCOUNT" in t_orig: return "bsi"
+    if "MUAMALAT" in t_orig: return "muamalat"
+    
     return "unknown"
 
 @app.post("/api/analyze-pdf")
