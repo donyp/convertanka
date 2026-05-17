@@ -54,9 +54,11 @@ if env == "production" and os.getenv("ENFORCE_HTTPS") == "true":
     app.add_middleware(HTTPSRedirectMiddleware)
 
 # 2. Trusted Host Validation
-# On Vercel, the internal host might vary. For production, we can be more permissive
-# or add the specific Vercel domain.
+# On Vercel, the internal host might vary. For production, we allow common domains.
 allowed_hosts = os.getenv("ALLOWED_HOSTS", "*").split(",")
+if "*" not in allowed_hosts and env == "production":
+    allowed_hosts.extend([".vercel.app", ".now.sh"])
+
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
 # 3. CORS Policy

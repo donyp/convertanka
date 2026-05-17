@@ -11,7 +11,14 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Engine initialization with safeguard for missing URL
 if SQLALCHEMY_DATABASE_URL:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # Use pool_pre_ping to handle stale connections in serverless (Supabase/Vercel)
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=300
+    )
 else:
     # Placeholder for local dev if URL is missing, or handles Vercel cold starts without ENV
     print("Warning: DATABASE_URL is not defined in environment variables.")

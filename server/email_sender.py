@@ -103,7 +103,7 @@ def send_otp_email(to_email: str, otp: str, subject: str = "Reset Password DataC
             msg.set_content(text_body)
             msg.add_alternative(html_body, subtype='html')
 
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=20) as server:
                 server.login(SMTP_USER, SMTP_PASS)
                 server.send_message(msg)
             print(f"Email HTML OTP dikirim ke {to_email}")
