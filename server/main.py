@@ -17,34 +17,36 @@ import uuid
 import pdfplumber
 from fastapi import BackgroundTasks
 
-from server.parsers.bca import parse_bca
-from server.parsers.muamalat import parse_muamalat
-from server.parsers.bsi import parse_bsi
-from server.excel_writer import generate_excel
-from server.coin_manager import calculate_cost # Keeping logic, but will use DB balance
+try:
+    from server.parsers.bca import parse_bca
+    from server.parsers.muamalat import parse_muamalat
+    from server.parsers.bsi import parse_bsi
+    from server.excel_writer import generate_excel
+    from server.coin_manager import calculate_cost
 
-from server.database import engine, Base, get_db
-from server.models import User, ConversionRecord, AdminLog, CoinPackage, CoinPurchase, BroadcastNotification, PendingRegistration
-from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
-from server.email_sender import send_otp_email
+    from server.database import engine, Base, get_db
+    from server.models import User, ConversionRecord, AdminLog, CoinPackage, CoinPurchase, BroadcastNotification, PendingRegistration
+    from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
+    from server.email_sender import send_otp_email
 
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from dotenv import load_dotenv
+    # Create database tables safely
+    if os.getenv("DATABASE_URL"):
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            print(f"Warning: Database creation failed: {e}")
 
-# Load Environment Variables
-load_dotenv()
+    app = FastAPI(title="MutasiConvert API")
+except Exception as e:
+    import traceback
+    error_msg = f"CRASH DURING STARTUP: {str(e)}\n{traceback.format_exc()}"
+    print(error_msg)
+    app = FastAPI()
+    @app.get("/{path:path}")
+    @app.post("/{path:path}")
+    async def catch_all(request: Request):
+        return {"error": "Startup Crash", "detail": error_msg}
 
-# Create database tables safely
-if os.getenv("DATABASE_URL"):
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print(f"Warning: Database creation failed: {e}")
-else:
-    print("Warning: DATABASE_URL not set. Database tables not created.")
-
-app = FastAPI(title="MutasiConvert API")
 
 # --- SECURITY MIDDLEWARES ---
 
