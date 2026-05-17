@@ -50,16 +50,13 @@ app = FastAPI(title="MutasiConvert API")
 
 # 1. Enforce HTTPS (Disabled by default for local dev, enable in .env)
 env = os.getenv("ENV", "development")
-if env == "production" and os.getenv("ENFORCE_HTTPS") == "true":
+if env == "production" and os.getenv("ENFORCE_HTTPS") == "true" and False: # Disabled for debug
     app.add_middleware(HTTPSRedirectMiddleware)
 
 # 2. Trusted Host Validation
 # On Vercel, the internal host might vary. For production, we allow common domains.
-allowed_hosts = os.getenv("ALLOWED_HOSTS", "*").split(",")
-if "*" not in allowed_hosts and env == "production":
-    allowed_hosts.extend([".vercel.app", ".now.sh"])
-
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
+# 2. Trusted Host Validation
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # 3. CORS Policy
 app.add_middleware(

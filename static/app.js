@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Toast.show(data.detail || 'Gagal', 'error', 4000);
             }
         } catch (err) {
-            Toast.show('Terjadi kesalahan koneksi.', 'error');
+            Toast.show('Terjadi kesalahan koneksi: ' + err.message, 'error');
         } finally {
             authSubmitBtn.disabled = false;
             authSubmitBtn.textContent = isRegisterMode ? "Daftar Sekarang" : "Login";
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Toast.show(data.detail || 'Gagal mengirim OTP.', 'error');
             }
         } catch (err) {
-            Toast.show('Terjadi kesalahan koneksi.', 'error');
+            Toast.show('Terjadi kesalahan koneksi: ' + err.message, 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Kirim OTP';
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Toast.show(data.detail || 'OTP salah atau kedaluwarsa.', 'error');
             }
         } catch (err) {
-            Toast.show('Terjadi kesalahan koneksi.', 'error');
+            Toast.show('Terjadi kesalahan koneksi: ' + err.message, 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Verifikasi OTP';
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Toast.show(data.detail || 'Gagal mengubah password.', 'error');
             }
         } catch (err) {
-            Toast.show('Terjadi kesalahan koneksi.', 'error');
+            Toast.show('Terjadi kesalahan koneksi: ' + err.message, 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Simpan Password Baru';

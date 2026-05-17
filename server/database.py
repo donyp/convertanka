@@ -22,9 +22,8 @@ if SQLALCHEMY_DATABASE_URL:
 else:
     # Placeholder for local dev if URL is missing, or handles Vercel cold starts without ENV
     print("Warning: DATABASE_URL is not defined in environment variables.")
-    # Use a dummy SQLite for module import stability if needed, 
-    # but the app will likely fail on DB dependency anyway.
-    engine = create_engine("sqlite:///./fallback.db") 
+    # Use in-memory SQLite for module import stability if URL is missing
+    engine = create_engine("sqlite://") 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
