@@ -16,7 +16,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Security Config from Env Variables
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_for_dev_only")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if os.getenv("ENV") == "production" or os.getenv("VERCEL"):
+        raise RuntimeError("SECRET_KEY wajib di-set di environment production.")
+    SECRET_KEY = "fallback_secret_for_dev_only"
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10080))
 
@@ -56,6 +60,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akun Anda telah dinonaktifkan. Hubungi admin.",
+        )
     return user
 
 async def get_admin_user(current_user: User = Depends(get_current_user)):

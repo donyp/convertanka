@@ -25,6 +25,7 @@ from server.database import engine, Base, get_db
 from server.models import User, ConversionRecord, AdminLog, CoinPackage, CoinPurchase, BroadcastNotification, PendingRegistration
 from server.auth import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user
 from server.email_sender import send_otp_email
+from server.rate_limit import get_client_ip, enforce_rate_limit
 
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -136,11 +137,16 @@ async def register(
     device_fingerprint: str = Form(""),
     db: Session = Depends(get_db)
 ):
-    ip_address = request.client.host
-    
+    ip_address = get_client_ip(request)
+    enforce_rate_limit(db, f"register_ip:{ip_address}", 5, 60)
+
     # Check domain
     if not email.endswith("@gmail.com"):
         raise HTTPException(status_code=400, detail="Pendaftaran ditolak: Hanya email dengan domain @gmail.com yang dizinkan.")
+
+    # Strict format check (prevents HTML/script injection into admin panel)
+    if not re.fullmatch(r"[a-zA-Z0-9._%+-]+@gmail\.com", email):
+        raise HTTPException(status_code=400, detail="Format email tidak valid. Gunakan format email @gmail.com yang benar.")
     
     # Check if user already exists
     db_user = db.query(User).filter(User.email == email).first()
@@ -178,7 +184,9 @@ async def request_verification(
 ):
     if current_user.email_verified:
         raise HTTPException(status_code=400, detail="Email Anda sudah terverifikasi.")
-        
+
+    enforce_rate_limit(db, f"request_verification:{current_user.email}", 3, 60)
+
     otp = "{:06d}".format(secrets.randbelow(1000000))
     current_user.verification_otp = otp
     current_user.verification_otp_expiry = datetime.utcnow() + timedelta(minutes=15)
@@ -204,8 +212,10 @@ async def verify_email(
 ):
     if current_user.email_verified:
         raise HTTPException(status_code=400, detail="Email Anda sudah terverifikasi.")
-        
-    if not current_user.verification_otp or current_user.verification_otp != otp:
+
+    enforce_rate_limit(db, f"verify_email:{current_user.email}", 5, 60)
+
+    if not current_user.verification_otp or not secrets.compare_digest(current_user.verification_otp, otp):
         raise HTTPException(status_code=400, detail="Kode OTP salah.")
         
     if current_user.verification_otp_expiry < datetime.utcnow():
@@ -223,6 +233,10 @@ async def verify_email(
 @app.post("/api/auth/login")
 @limiter.limit("10/minute")
 async def login(request: Request, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    ip = get_client_ip(request)
+    enforce_rate_limit(db, f"login_ip:{ip}", 10, 60)
+    enforce_rate_limit(db, f"login_email:{form_data.username.lower()}", 5, 60)
+
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -243,6 +257,7 @@ async def login(request: Request, db: Session = Depends(get_db), form_data: OAut
 @app.post("/api/auth/forgot-password")
 @limiter.limit("3/minute")
 async def forgot_password(request: Request, background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
+    enforce_rate_limit(db, f"forgot_password_ip:{get_client_ip(request)}", 3, 60)
     user = db.query(User).filter(User.email == email).first()
     if not user:
         # Prevent email enumeration by returning generic success even if not found
@@ -261,8 +276,10 @@ async def forgot_password(request: Request, background_tasks: BackgroundTasks, e
 @app.post("/api/auth/verify-otp")
 @limiter.limit("5/minute")
 async def verify_otp(request: Request, email: str = Form(...), otp: str = Form(...), db: Session = Depends(get_db)):
+    enforce_rate_limit(db, f"verify_otp_ip:{get_client_ip(request)}", 5, 60)
+    enforce_rate_limit(db, f"verify_otp_email:{email.lower()}", 5, 900)
     user = db.query(User).filter(User.email == email).first()
-    if not user or user.reset_otp != otp:
+    if not user or not secrets.compare_digest(user.reset_otp or "", otp):
         raise HTTPException(status_code=400, detail="OTP salah atau tidak cocok.")
     
     if not user.reset_otp_expiry or datetime.utcnow() > user.reset_otp_expiry:
@@ -273,8 +290,9 @@ async def verify_otp(request: Request, email: str = Form(...), otp: str = Form(.
 @app.post("/api/auth/reset-password")
 @limiter.limit("3/minute")
 async def reset_password(request: Request, email: str = Form(...), otp: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db)):
+    enforce_rate_limit(db, f"reset_password_ip:{get_client_ip(request)}", 3, 60)
     user = db.query(User).filter(User.email == email).first()
-    if not user or user.reset_otp != otp:
+    if not user or not secrets.compare_digest(user.reset_otp or "", otp):
         raise HTTPException(status_code=400, detail="OTP salah atau tidak cocok.")
     
     if not user.reset_otp_expiry or datetime.utcnow() > user.reset_otp_expiry:
@@ -395,7 +413,7 @@ async def add_coins(unique_code: str = Form(...), amount: int = Form(...), db: S
 
 # --- DASHBOARD STATS ---
 
-from sqlalchemy import func
+from sqlalchemy import func, update
 
 @app.get("/api/admin/stats")
 async def get_admin_stats(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
@@ -686,13 +704,14 @@ async def update_purchase_status(
     purchase.status = new_status
     purchase.updated_at = datetime.utcnow()
     
-    # Auto-add coins when status changes to "berhasil"
+    # Auto-add coins when status changes to "berhasil" (credited exactly once)
     order_id_str = purchase.order_number if getattr(purchase, 'order_number', None) else f"#{purchase.id}"
     message = f"Status pembelian {order_id_str} diubah dari '{old_status}' ke '{new_status}'."
-    if new_status == "berhasil" and old_status != "berhasil":
+    if new_status == "berhasil" and not purchase.coins_credited:
         user = db.query(User).filter(User.id == purchase.user_id).first()
         if user:
             user.coins += purchase.coin_amount
+            purchase.coins_credited = True
             message += f" {purchase.coin_amount} koin ditambahkan ke {user.email}."
             log_admin_action(db, admin.id, f"Approve Pembelian {order_id_str}", f"+{purchase.coin_amount} koin → {user.email}")
     else:
@@ -822,29 +841,10 @@ async def convert_pdf(
     try:
         with pdfplumber.open(tmp_path) as pdf:
             page_count = len(pdf.pages)
-        
+
         cost = calculate_cost(page_count)
-        if current_user.coins < cost:
-            raise HTTPException(
-                status_code=402, 
-                detail=f"Saldo koin tidak mencukupi (Butuh: {cost}, Saldo: {current_user.coins})."
-            )
 
-        # Deduct coins from DB
-        current_user.coins -= cost
-        
-        # Log conversion record
-        history_record = ConversionRecord(
-            user_id=current_user.id,
-            bank=bank,
-            filename=file.filename,
-            page_count=page_count,
-            coin_cost=cost
-        )
-        db.add(history_record)
-        db.commit()
-
-        # Parse
+        # Parse BEFORE charging coins so a failed conversion never costs the user
         if bank.lower() == "bca": data, metadata = parse_bca(tmp_path)
         elif bank.lower() == "muamalat": data, metadata = parse_muamalat(tmp_path)
         elif bank.lower() == "bsi": data, metadata = parse_bsi(tmp_path)
@@ -856,6 +856,30 @@ async def convert_pdf(
         output = io.BytesIO()
         generate_excel(data, metadata, output)
         output.seek(0)
+
+        # Atomic deduction (guarded by balance) prevents race-condition overdraw
+        result = db.execute(
+            update(User)
+            .where(User.id == current_user.id, User.coins >= cost)
+            .values(coins=User.coins - cost)
+        )
+        if result.rowcount == 0:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Saldo koin tidak mencukupi (Butuh: {cost}, Saldo: {current_user.coins})."
+            )
+
+        # Log conversion record
+        history_record = ConversionRecord(
+            user_id=current_user.id,
+            bank=bank,
+            filename=file.filename,
+            page_count=page_count,
+            coin_cost=cost
+        )
+        db.add(history_record)
+        db.commit()
+        db.refresh(current_user)
 
         # Generate simplified filename: MUTASI_NAMABANK_TANGGALKONVERSI
         current_time = datetime.now().strftime("%d-%b-%Y_%H-%M").upper()

@@ -282,6 +282,8 @@
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = '/app';
 
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
         /**
          * Custom Toast Notification System
          */
@@ -306,10 +308,16 @@
                     info: 'fa-info-circle'
                 };
 
-                toast.innerHTML = `
-                    <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
-                    <div class="toast-content">${message}</div>
-                `;
+                const iconEl = document.createElement('div');
+                iconEl.className = 'toast-icon';
+                iconEl.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>`;
+
+                const contentEl = document.createElement('div');
+                contentEl.className = 'toast-content';
+                contentEl.textContent = message;
+
+                toast.appendChild(iconEl);
+                toast.appendChild(contentEl);
 
                 container.appendChild(toast);
 
@@ -361,8 +369,8 @@
                 tbody.innerHTML = data.map(item => `
                     <tr>
                         <td style="color: var(--text-muted)">${new Date(item.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
-                        <td><span class="bank-tag">${item.bank}</span></td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.filename}">${item.filename}</td>
+                        <td><span class="bank-tag">${esc(item.bank)}</span></td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(item.filename)}">${esc(item.filename)}</td>
                         <td>${item.page_count} Hal</td>
                         <td style="color: var(--primary); font-weight: bold;">-${item.coin_cost} Koin</td>
                     </tr>
@@ -396,10 +404,10 @@
                 tbody.innerHTML = data.map(p => `
                     <tr>
                         <td style="color: var(--text-muted)">${new Date(p.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
-                        <td>${p.package_name} <span style="color:#fbbf24;font-weight:600;font-size:0.8rem;">(${p.coin_amount} Koin)</span></td>
+                        <td>${esc(p.package_name)} <span style="color:#fbbf24;font-weight:600;font-size:0.8rem;">(${p.coin_amount} Koin)</span></td>
                         <td style="color: var(--primary); font-weight: bold;">Rp ${p.price.toLocaleString('id-ID')}</td>
-                        <td>${p.payment_method}</td>
-                        <td><span style="padding:0.2rem 0.6rem;border-radius:6px;font-size:0.7rem;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;${statusStyles[p.status] || ''}">${p.status}</span></td>
+                        <td>${esc(p.payment_method)}</td>
+                        <td><span style="padding:0.2rem 0.6rem;border-radius:6px;font-size:0.7rem;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;${statusStyles[p.status] || ''}">${esc(p.status)}</span></td>
                     </tr>
                 `).join('');
             } catch (err) {

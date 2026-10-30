@@ -728,6 +728,8 @@
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = '/app';
 
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
         // Toast System
         const Toast = {
             init() {
@@ -743,7 +745,14 @@
                 const t = document.createElement('div');
                 t.className = `toast toast-${type}`;
                 const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-                t.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div><div class="toast-content">${msg}</div>`;
+                const iconEl = document.createElement('div');
+                iconEl.className = 'toast-icon';
+                iconEl.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>`;
+                const contentEl = document.createElement('div');
+                contentEl.className = 'toast-content';
+                contentEl.textContent = msg;
+                t.appendChild(iconEl);
+                t.appendChild(contentEl);
                 c.appendChild(t);
                 setTimeout(() => t.classList.add('show'), 10);
                 setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 600) }, dur);
@@ -781,13 +790,13 @@
                 }
 
                 grid.innerHTML = pkgs.map(p => `
-                    <div class="pkg-card" data-id="${p.id}" data-name="${p.name}" data-coins="${p.coin_amount}" data-price="${p.price}">
+                    <div class="pkg-card" data-id="${p.id}" data-name="${esc(p.name)}" data-coins="${p.coin_amount}" data-price="${p.price}">
                         <div class="pkg-check"><i class="fas fa-check"></i></div>
                         <div class="pkg-coin-icon"><i class="fas fa-coins"></i></div>
                         <div class="pkg-coin-amount">${p.coin_amount}</div>
                         <div class="pkg-coin-label">Koin</div>
                         <div class="pkg-price">Rp ${p.price.toLocaleString('id-ID')}</div>
-                        <div class="pkg-name">${p.name}</div>
+                        <div class="pkg-name">${esc(p.name)}</div>
                     </div>
                 `).join('');
 

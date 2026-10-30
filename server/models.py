@@ -89,6 +89,9 @@ class CoinPurchase(Base):
     # Status: pending → menunggu → diproses → berhasil / ditolak
     status = Column(String, default="pending")
 
+    # Guard against double-crediting coins when status is toggled
+    coins_credited = Column(Boolean, default=False)
+
     # Payment proof image filename
     proof_filename = Column(String, nullable=True)
 
@@ -120,3 +123,12 @@ class PendingRegistration(Base):
     otp = Column(String, nullable=False)
     otp_expiry = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RateLimitEntry(Base):
+    __tablename__ = "rate_limit_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True, nullable=False)
+    window_start = Column(DateTime, nullable=False, default=datetime.utcnow)
+    count = Column(Integer, default=0)

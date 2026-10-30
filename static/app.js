@@ -22,10 +22,16 @@ const Toast = {
             info: 'fa-info-circle'
         };
 
-        toast.innerHTML = `
-            <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
-            <div class="toast-content">${message}</div>
-        `;
+        const iconEl = document.createElement('div');
+        iconEl.className = 'toast-icon';
+        iconEl.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>`;
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'toast-content';
+        contentEl.textContent = message;
+
+        toast.appendChild(iconEl);
+        toast.appendChild(contentEl);
 
         container.appendChild(toast);
 

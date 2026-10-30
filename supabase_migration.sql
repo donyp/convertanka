@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS coin_purchases (
     price INTEGER NOT NULL,
     status VARCHAR DEFAULT 'pending',
     proof_filename VARCHAR,
+    coins_credited BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
 );
@@ -110,9 +111,26 @@ CREATE TABLE IF NOT EXISTS pending_registrations (
 );
 CREATE INDEX IF NOT EXISTS ix_pending_registrations_email ON pending_registrations (email);
 
+-- 8. rate_limit_entries (DB-backed rate limiting, serverless-safe)
+CREATE TABLE IF NOT EXISTS rate_limit_entries (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR UNIQUE NOT NULL,
+    window_start TIMESTAMP DEFAULT now(),
+    count INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS ix_rate_limit_entries_key ON rate_limit_entries (key);
+
 -- ============================================================
--- Optional seed: default admin user (password: admin123)
--- Ganti hash sesuai kebutuhan (bcrypt). Gunakan create_admin.py bila ada.
+-- Upgrade statements for EXISTING databases (idempotent):
+--   Run these if the tables above already exist.
+-- ============================================================
+ALTER TABLE coin_purchases ADD COLUMN IF NOT EXISTS coins_credited BOOLEAN DEFAULT FALSE;
+
+-- ============================================================
+-- Optional seed: default admin user.
+-- JANGAN gunakan password default. Jalankan:
+--   python create_admin.py
+-- atau set env ADMIN_PASSWORD lalu jalankan create_admin.py.
 -- INSERT INTO users (email, hashed_password, is_admin, coins, email_verified)
 -- VALUES ('admin@gmail.com', '<bcrypt_hash>', TRUE, 1000, TRUE);
 -- ============================================================

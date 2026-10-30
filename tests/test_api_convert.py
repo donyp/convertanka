@@ -84,8 +84,12 @@ def test_convert_success(client, user, user_headers, monkeypatch):
     assert get_user(user.email).coins == 49
 
 
-def test_convert_insufficient_coins(client):
+def test_convert_insufficient_coins(client, monkeypatch):
     u = make_user(coins=0)
+    monkeypatch.setattr(main, "parse_bca", lambda path: (
+        [["01/02", "TRANSFER", "", 1000.0, "CR", 5000.0]],
+        {"bank": "BCA", "headers": ["Tanggal", "Keterangan", "Mutasi", "Saldo"]},
+    ))
     r = client.post("/api/convert", files=pdf_file(),
                     data={"bank": "bca"}, headers=make_headers(u))
     assert r.status_code == 402

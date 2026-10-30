@@ -758,12 +758,15 @@
         if (!token) window.location.href = '/app';
 
         // Toast
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const Toast = {
             init() { if (!document.getElementById('toast-container')) { const c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); } },
             show(msg, type = 'info', dur = 3000) {
                 this.init(); const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast toast-${type}`;
                 const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-                t.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div><div class="toast-content">${msg}</div>`;
+                const icon = document.createElement('div'); icon.className = 'toast-icon'; icon.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>`;
+                const content = document.createElement('div'); content.className = 'toast-content'; content.textContent = msg;
+                t.appendChild(icon); t.appendChild(content);
                 c.appendChild(t); setTimeout(() => t.classList.add('show'), 10);
                 setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 600) }, dur);
             }
@@ -818,16 +821,16 @@
                 document.getElementById('admin-list-body').innerHTML = admins.length === 0
                     ? '<tr><td colspan="4" class="empty-table">Belum ada admin.</td></tr>'
                     : admins.map(u => `<tr>
-                        <td>${u.email}</td>
-                        <td><code class="badge-code">${u.unique_code}</code></td>
-                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                        <td>${esc(u.email)}</td>
+                        <td><code class="badge-code">${esc(u.unique_code)}</code></td>
+                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${esc(u.coins)}</td>
                         <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                         <td>
                             <div class="action-btns">
                                 <button class="btn-sm btn-warn" onclick="toggleAdmin(${u.id})" title="Turunkan ke User">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
-                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${esc(u.email)}')" title="Hapus"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>`).join('');
@@ -835,9 +838,9 @@
                 document.getElementById('user-list-body').innerHTML = regulars.length === 0
                     ? '<tr><td colspan="6" class="empty-table">Belum ada user.</td></tr>'
                     : regulars.map(u => `<tr>
-                        <td>${u.email}</td>
-                        <td><code class="badge-code">${u.unique_code}</code></td>
-                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${u.coins}</td>
+                        <td>${esc(u.email)}</td>
+                        <td><code class="badge-code">${esc(u.unique_code)}</code></td>
+                        <td><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${esc(u.coins)}</td>
                         <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
                         <td style="color:var(--text-muted)">${new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                         <td>
@@ -848,7 +851,7 @@
                                 <button class="btn-sm btn-secondary" onclick="toggleAdmin(${u.id})" title="Jadikan Admin">
                                     <i class="fas fa-user-shield"></i>
                                 </button>
-                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.email}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id}, '${esc(u.email)}')" title="Hapus"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>`).join('');
@@ -887,8 +890,8 @@
                 el.innerHTML = pkgs.map(p => `
                     <div class="package-item">
                         <div class="package-info">
-                            <h4>${p.name}</h4>
-                            <p><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${p.coin_amount} Koin</p>
+                            <h4>${esc(p.name)}</h4>
+                            <p><i class="fas fa-coins" style="color:#fbbf24;margin-right:4px"></i>${esc(p.coin_amount)} Koin</p>
                         </div>
                         <div style="display:flex;align-items:center;gap:1rem;">
                             <span class="package-price">Rp ${p.price.toLocaleString()}</span>
@@ -930,8 +933,8 @@
             if (notifs.length === 0) { el.innerHTML = '<p class="empty-table">Belum ada broadcast.</p>'; return; }
             el.innerHTML = notifs.map(n => `
                 <div class="broadcast-item">
-                    <h4><i class="fas fa-bell" style="color:var(--primary);margin-right:6px"></i>${n.title}</h4>
-                    <p>${n.message}</p>
+                    <h4><i class="fas fa-bell" style="color:var(--primary);margin-right:6px"></i>${esc(n.title)}</h4>
+                    <p>${esc(n.message)}</p>
                     <span class="time">${new Date(n.created_at).toLocaleString('id-ID')}</span>
                 </div>
             `).join('');
@@ -961,9 +964,9 @@
                 if (logs.length === 0) { el.innerHTML = '<tr><td colspan="4" class="empty-table">Belum ada log.</td></tr>'; return; }
                 el.innerHTML = logs.map(l => `<tr>
                     <td style="color:var(--text-muted);white-space:nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
-                    <td>${l.admin_email}</td>
-                    <td><span class="badge badge-active">${l.action}</span></td>
-                    <td style="color:var(--text-muted)">${l.target_info || '-'}</td>
+                    <td>${esc(l.admin_email)}</td>
+                    <td><span class="badge badge-active">${esc(l.action)}</span></td>
+                    <td style="color:var(--text-muted)">${esc(l.target_info || '-')}</td>
                 </tr>`).join('');
             } catch (e) { console.error('Error loading logs:', e); }
         }
@@ -1030,17 +1033,17 @@
 
                 el.innerHTML = purchases.map(p => `<tr>
                     <td style="color:var(--text-muted); font-size:0.8rem;">
-                        ${p.order_number || `#${p.id}`}<br>
+                        ${esc(p.order_number || `#${p.id}`)}<br>
                         <span style="font-size:0.65rem;opacity:0.6;">(ID: ${p.id})</span>
                     </td>
-                    <td>${p.user_email}<br><code class="badge-code" style="font-size:0.65rem;">${p.user_unique_code}</code></td>
-                    <td>${p.buyer_name}<br><span style="color:var(--text-muted);font-size:0.75rem;">${p.buyer_phone}</span>
-                        ${p.buyer_unique_code && p.buyer_unique_code !== '-' ? `<br><code class="badge-code" style="font-size:0.65rem;background:rgba(255,255,255,0.1);color:#fff;">${p.buyer_unique_code}</code>` : ''}
+                    <td>${esc(p.user_email)}<br><code class="badge-code" style="font-size:0.65rem;">${esc(p.user_unique_code)}</code></td>
+                    <td>${esc(p.buyer_name)}<br><span style="color:var(--text-muted);font-size:0.75rem;">${esc(p.buyer_phone)}</span>
+                        ${p.buyer_unique_code && p.buyer_unique_code !== '-' ? `<br><code class="badge-code" style="font-size:0.65rem;background:rgba(255,255,255,0.1);color:#fff;">${esc(p.buyer_unique_code)}</code>` : ''}
                     </td>
-                    <td>${p.package_name} <span style="color:#fbbf24;font-size:0.75rem;">(${p.coin_amount})</span></td>
+                    <td>${esc(p.package_name)} <span style="color:#fbbf24;font-size:0.75rem;">(${esc(p.coin_amount)})</span></td>
                     <td style="color:var(--primary);font-weight:600;">Rp ${p.price.toLocaleString()}</td>
-                    <td>${p.payment_method}</td>
-                    <td><span class="badge" style="${statusStyles[p.status] || ''}">${p.status.toUpperCase()}</span></td>
+                    <td>${esc(p.payment_method)}</td>
+                    <td><span class="badge" style="${statusStyles[p.status] || ''}">${esc(p.status.toUpperCase())}</span></td>
                     <td style="color:var(--text-muted);white-space:nowrap;font-size:0.8rem;">${new Date(p.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}</td>
                     <td>
                         <div class="action-btns" style="flex-direction:column;gap:0.3rem;">
